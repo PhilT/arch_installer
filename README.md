@@ -4,7 +4,9 @@ Simple scripts to install Arch Linux.
 
 ## Usage
 
-bash <(curl -s https://github.com/PhilT/arch_installer/raw/master/install.sh)
+Boot an Arch Linux Live CD and run the following command
+
+    bash <(curl -s http://goo.gl/tKEBG9)
 
 
 ## References
