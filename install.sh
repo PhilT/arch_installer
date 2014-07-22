@@ -1,22 +1,12 @@
 #!/bin/bash
 
-if [ -z $1 ]; then
-  echo 'Arch Linux SSH Installation'
-  echo 'Download ISO from https://www.archlinux.org/download/'
-  echo '  I used UK2: http://archlinux.mirrors.uk2.net/iso/2014.07.03/'
-  echo '####'
-  echo 'Boot CD and run the following:'
-  echo '    systemctl start sshd'
-  echo '    passwd'
-  echo '    ip a'
-  echo '####'
-  echo 'Then run this script with the IP address from `ip a`'
-  echo '    install.sh <ip address>'
-  exit
-fi
+# VARIABLES
+HOST=server
 
-ssh -t root@$1 "
+# SETUP KEYBOARD
 loadkeys uk
+
+# FILE SYSTEM
 fdisk /dev/sda << EOF
 n
 
@@ -27,23 +17,39 @@ w
 EOF
 mkfs.ext4 /dev/sda1
 mount /dev/sda1 /mnt
-systemctl enable dhcpcd@enp0s3.service
+
+# INSTALL ARCH BASE
 pacstrap /mnt base
 genfstab -p /mnt >> /mnt/etc/fstab
-arch-chroot /mnt /bin/bash -c \"
-echo server > /etc/hostname
-echo 127.0.0.1 localhost.localdomain localhost server > /etc/hosts
+
+# NETWORK (INC SSHD)
+arch-chroot /mnt /bin/bash -c "
+echo $HOST > /etc/hostname
+echo 127.0.0.1 localhost.localdomain localhost $HOST > /etc/hosts
 echo ::1       localhost.localdomain localhost >> /etc/hosts
+systemctl enable dhcpcd@enp0s3.service
+pacman -S --noconfirm openssh
+"
+
+# TIME, LOCALE, KEYBOARD
+arch-chroot /mnt /bin/bash -c "
 ln -s /usr/share/zoneinfo/GB /etc/localtime
 echo en_GB.UTF-8 UTF-8 >> /etc/locale.gen
 locale-gen
 echo KEYMAP=\"uk\" >> /etc/vconsole.conf
 hwclock --systohc --utc
+"
+
+# BOOTLOADER
+arch-chroot /mnt /bin/bash -c "
 pacman -S --noconfirm grub
 grub-install --target=i386-pc --recheck /dev/sda
 grub-mkconfig -o /boot/grub/grub.cfg
-passwd
-\"
+"
+
+# ROOT PASSWORD
+arch-chroot /mnt /bin/bash -c "passwd"
+
+# FINALISE
 umount -R /mnt
 reboot
-"

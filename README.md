@@ -1,17 +1,13 @@
-# Install Arch from ssh
+# Install and Configure Arch Linux
 
-A simple script to install Arch Linux from SSH.
+Simple scripts to install Arch Linux.
 
-Displays help and getting started:
+## Usage
 
-    install.sh
-
-Install Arch Linux:
-
-    install.sh <IP address>
+bash <(curl -s https://github.com/PhilT/arch_installer/raw/master/install.sh)
 
 
-# References
+## References
 
 * https://wiki.archlinux.org/index.php/Installation_Guide
 * https://wiki.archlinux.org/index.php/Beginners'_Guide
