@@ -87,13 +87,14 @@ chuser_cmd () {
   fi
 }
 
-install_from_aur () {
-  chroot_cmd $1 "install from aur: $2" "
+aur_cmd () {
+  name=`basename $2 .tar.gz`
+  chroot_cmd $1 "install from aur: $name" "
 cd /usr/local/src
-curl -0 $3 | tar -zx >> $LOG
-cd $2
+curl -0 $2 | tar -zx >> $LOG
+cd $name
 makepkg -s >> $LOG
-$AUR $2.pkg.tar
+$AUR $name.pkg.tar
 "
 }
 
@@ -187,9 +188,12 @@ sed -i s/#BUILDDIR=/BUILDDIR=/ /etc/makepkg.conf
 sed -i s/.*PKGEXT=.*/PKGEXT='.pkg.tar'/ /etc/makepkg.conf
 "
 
-aur_cmd $RBENV 'rbenv' 'https://aur.archlinux.org/packages/rb/rbenv/rbenv.tar.gz'
-aur_cmd $RUBY_BUILD 'ruby-build' 'https://aur.archlinux.org/packages/ru/ruby-build/ruby-build.tar.gz'
-aur_cmd $TTF_MS_FONTS 'ttf-ms-fonts' 'https://aur.archlinux.org/packages/tt/ttf-ms-fonts/ttf-ms-fonts.tar.gz'
+
+
+aur_cmd $RBENV 'https://aur.archlinux.org/packages/rb/rbenv/rbenv.tar.gz'
+aur_cmd $RUBY_BUILD 'https://aur.archlinux.org/packages/ru/ruby-build/ruby-build.tar.gz'
+aur_cmd $TTF_MS_FONTS 'https://aur.archlinux.org/packages/tt/ttf-ms-fonts/ttf-ms-fonts.tar.gz'
+aur_cmd $ATOM 'https://aur.archlinux.org/packages/at/atom-editor/atom-editor.tar.gz'
 
 chroot_cmd $CUSTOMIZATION 'pacman & sudoer customization' "
 cp /etc/pacman.conf /etc/pacman.conf.original
