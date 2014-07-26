@@ -70,7 +70,7 @@ if [ $INSTALL_TYPE = 'dryrun' ]; then
 fi
 
 [[ $HOST != 'server' ]] && unset SWAPFILE
-[[ lspci | grep -q VirtualBox ]] || unset VIRTUALBOX
+[[ `lspci | grep -q VirtualBox` ]] || unset VIRTUALBOX
 [[ $HOST = 'server' ]] && unset XWINDOWS
 [[ ! $XWINDOW ]] && unset ATOM && unset TTF_MS_FONTS
 
