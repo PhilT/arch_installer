@@ -7,7 +7,7 @@ Simple script to install and configure Arch Linux.
 
 Boot an Arch Linux Live CD and run the following command:
 
-    bash <(curl -s http://goo.gl/tKEBG9)
+    bash <(curl -Ls http://goo.gl/tKEBG9)
 
 If you want to run this through SSH (e.g. so you have scrollback):
 
@@ -54,7 +54,7 @@ All user input is taken at the start to ensure the installation can complete una
 
 This downloads and runs install.sh on the `dev` branch:
 
-    bash <(curl -s http://goo.gl/1vmj59)
+    bash <(curl -Ls http://goo.gl/1vmj59)
 
 
 

@@ -40,7 +40,7 @@ case $INSTALL_TYPE in
   BASE=true
   ;;
 'full' | 'dryrun')
-  BASE=true
+  [[ $INSTALL_TYPE != 'dryrun' ]] && BASE=true
   LOCALE=true
   SWAPFILE=true
   BOOTLOADER=true
