@@ -1,6 +1,7 @@
 #!/usr/bin/env sh
 
-# VARIABLES
+#### VARIABLES ####
+
 USER=phil
 WORKSPACE='~/ws'
 PACMAN='pacman -S --noconfirm'
@@ -12,7 +13,8 @@ LOG='/var/log/install.log'
 USER_LOG='~/install.log'
 
 
-# USER INPUT
+#### USER INPUT ####
+
 echo 'Choose HOST [server|desktop|laptop]:'
 read HOST
 
@@ -30,7 +32,9 @@ echo 'dryrun - dry run - echo all commands instead of executing them'
 echo 'selected - selected options only - set ENV vars to install'
 read INSTALL_TYPE
 
-# OPTIONS
+
+#### OPTIONS #####
+
 case $INSTALL_TYPE in
 'base')
   BASE=true
@@ -74,21 +78,23 @@ fi
 [[ $HOST = 'server' ]] && unset XWINDOWS
 [[ ! $XWINDOW ]] && unset ATOM && unset TTF_MS_FONTS
 
-# FUNCTIONS
+
+#### FUNCTIONS ####
+
 chroot_cmd () {
   if [ $1 ]; then
-    echo $2 | tee -a $LOG
-    echo '-------------------------------------------------------------------' >> $LOG
-    echo -e "\n\n\n" >> $LOG
+    echo -e "\n\n\n" >> /mnt$LOG
+    echo $2 | tee -a /mnt$LOG
+    echo -e "------------------------------------\n" >> /mnt$LOG
     $CHROOT $3
   fi
 }
 
 chuser_cmd () {
   if [ $1 ]; then
-    echo $2 | tee -a $USER_LOG
-    echo '-------------------------------------------------------------------' >> $USER_LOG
-    echo -e "\n\n\n" >> $USER_LOG
+    echo -e "\n\n\n" >> /mnt$USER_LOG
+    echo $2 | tee -a /mnt$USER_LOG
+    echo -e "------------------------------------\n" >> /mnt$USER_LOG
     $CHUSER $3
   fi
 }
@@ -104,27 +110,33 @@ $AUR $name.pkg.tar
 "
 }
 
-#################################################
-# Base install
+#### BASE INSTALL ####
 
 if [ $BASE ]; then
-  echo 'keyboard'
+  mkdir -p /mnt/var/log
+  echo 'starting installation' | tee -a /mnt$LOG
+
+  echo 'keyboard' | tee -a /mnt$LOG
   loadkeys uk
 
-  echo 'filesystem'
-  sgdisk --zap-all /dev/sda
+  echo 'filesystem' | tee -a /mnt$LOG
+  sgdisk --zap-all /dev/sda >> /mnt$LOG 2>&1
 
-  echo -e "n\n\n\n\n\nw\n" | fdisk /dev/sda > /dev/null
-  mkfs.ext4 /dev/sda1 > /dev/null
-  mount /dev/sda1 /mnt > /dev/null
+  echo -e "n\n\n\n\n\nw\n" | fdisk /dev/sda >> /mnt$LOG 2>&1
+  mkfs.ext4 -F /dev/sda1 >> /mnt$LOG 2>&1
+  mount /dev/sda1 /mnt
 
-  echo 'arch linux base' | tee -a $LOG
-  pacstrap /mnt base > /dev/null
+  echo 'arch linux base' | tee -a /mnt$LOG
+  mkdir /mnt/etc/pacman.d
+  cp /etc/pacman.d/mirrorlist /mnt/etc/pacman.d/mirrorlist.original
+  URL="https://www.archlinux.org/mirrorlist/?country=GB&protocol=http&ip_version=4&use_mirror_status=on"
+  curl $URL | sed 's/^#Server/Server/' > /etc/pacman.d/mirrorlist
+  pacman -Syy >> /mnt$LOG 2>&1 # Refresh package lists
+  pacstrap /mnt base >> /mnt$LOG 2>&1
   genfstab -p /mnt >> /mnt/etc/fstab
 fi
 
-#######################################
-# root setup ($CHROOT)
+#### $CHROOT SETUP ####
 
 chroot_cmd $LOCALE 'time, locale, keyboard' "
 ln -s /usr/share/zoneinfo/GB /etc/localtime >> $LOG
@@ -174,7 +186,7 @@ echo vboxvideo >> /etc/modules-load.d/virtualbox.conf
 systemctl enable vboxservice.service >> $LOG
 "
 
-# Setup for specific architecture and improve build times
+# optimised for specific architecture and build times
 chroot_cmd $AUR_BUILD_FLAGS 'aur build flags' "
 cp /etc/makepkg.conf /etc/makepkg.conf.original
 sed -i s/CFLAGS=.*/CFLAGS=\"-march=native -O2 -pipe -fstack-protector --param=ssp-buffer-size=4\"/ /etc/makepkg.conf
@@ -204,8 +216,7 @@ $PACMAN xorg-server xorg-server-utils xorg-xinit elementary-icon-theme xcursor-v
 chroot_cmd $SET_ROOTPASS 'root password' "echo -e '$ROOTPASS\n$ROOTPASS\n' passwd >> $LOG"
 
 
-#######################################
-# user setup ($CHUSER)
+#### $CHUSER SETUP ####
 
 chuser_cmd $XWINDOWS 'create workspace' "mkdir -p $WORKSPACE >> $USER_LOG"
 chuser_cmd $XWINDOWS 'dwm' "cd $WORKSPACE && git clone $REPO/dwm.git >> $USER_LOG && cd dwm && make clean install >> $USER_LOG"
@@ -255,6 +266,7 @@ vim -c 'Helptags | q'
 
 chuser_cmd $SET_USERPASS 'user password' "echo -e '$USERPASS\n$USERPASS\n' passwd >> $USER_LOG"
 
-# FINALISE
+#### FINALISE ####
+
 umount -R /mnt
 reboot
