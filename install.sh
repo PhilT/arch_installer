@@ -2,7 +2,7 @@
 
 # VARIABLES
 USER=phil
-WORKSPACE='~/workspace'
+WORKSPACE='~/ws'
 PACMAN='pacman -S --noconfirm'
 AUR='pacman -U --noconfirm'
 CHROOT='arch-chroot /mnt /bin/bash -c'
@@ -33,9 +33,10 @@ read INSTALL_TYPE
 # OPTIONS
 case $INSTALL_TYPE in
 'base')
+  BASE=true
   ;;
-'full')
-'dryrun')
+'full' | 'dryrun')
+  BASE=true
   LOCALE=true
   SWAPFILE=true
   BOOTLOADER=true
@@ -46,16 +47,21 @@ case $INSTALL_TYPE in
   AUR_BUILD_FLAGS=true
   RBENV=true
   RUBY_BUILD=true
+  ATOM=true
   TTF_MS_FONTS=true
   CUSTOMIZATION=true
   XWINDOWS=true
   SET_ROOTPASS=true
   BIN=true
   DOTFILES=true
+  VIM=true
   SET_USERPASS=true
   ;;
 'selected')
   ;;
+*)
+  echo "Invalid option: $INSTALL_TYPE"
+  exit 1
 esac
 
 if [ $INSTALL_TYPE = 'dryrun' ]; then
@@ -63,10 +69,10 @@ if [ $INSTALL_TYPE = 'dryrun' ]; then
   CHUSER="echo $CHUSER"
 fi
 
-
-[[ $HOST = 'server' ]] || SWAPFILE=false
-[[ lspci | grep -q VirtualBox ]] || VIRTUALBOX=false
-[[ $HOST != 'server' ]] || XWINDOWS=false
+[[ $HOST != 'server' ]] && unset SWAPFILE
+[[ lspci | grep -q VirtualBox ]] || unset VIRTUALBOX
+[[ $HOST = 'server' ]] && unset XWINDOWS
+[[ ! $XWINDOW ]] && unset ATOM && unset TTF_MS_FONTS
 
 # FUNCTIONS
 chroot_cmd () {
@@ -99,13 +105,17 @@ $AUR $name.pkg.tar
 }
 
 #################################################
+# Base install
 
-echo 'keyboard'
-loadkeys uk
+if [ $BASE ]; then
+  echo 'keyboard'
+  loadkeys uk
 
-echo 'filesystem (Line breaks are significant)'
-sgdisk --zap-all /dev/sda
-fdisk /dev/sda << EOF
+  echo 'filesystem'
+  sgdisk --zap-all /dev/sda
+
+# Line breaks are significant
+  fdisk /dev/sda << EOF
 n
 
 
@@ -113,22 +123,16 @@ n
 
 w
 EOF > /dev/null
-mkfs.ext4 /dev/sda1 > /dev/null
-mount /dev/sda1 /mnt > /dev/null
+  mkfs.ext4 /dev/sda1 > /dev/null
+  mount /dev/sda1 /mnt > /dev/null
 
-echo 'arch linux base' | tee -a $LOG
-pacstrap /mnt base > /dev/null
-genfstab -p /mnt >> /mnt/etc/fstab
-
-
-if [ $INSTALL_TYPE = '1' ]; then
-  echo 'Install base system only (option 1 selected)'
-  exit
+  echo 'arch linux base' | tee -a $LOG
+  pacstrap /mnt base > /dev/null
+  genfstab -p /mnt >> /mnt/etc/fstab
 fi
 
 #######################################
 # root setup ($CHROOT)
-
 
 chroot_cmd $LOCALE 'time, locale, keyboard' "
 ln -s /usr/share/zoneinfo/GB /etc/localtime >> $LOG
@@ -178,7 +182,7 @@ echo vboxvideo >> /etc/modules-load.d/virtualbox.conf
 systemctl enable vboxservice.service >> $LOG
 "
 
-# Build for specific architecture and improve build times
+# Setup for specific architecture and improve build times
 chroot_cmd $AUR_BUILD_FLAGS 'aur build flags' "
 cp /etc/makepkg.conf /etc/makepkg.conf.original
 sed -i s/CFLAGS=.*/CFLAGS=\"-march=native -O2 -pipe -fstack-protector --param=ssp-buffer-size=4\"/ /etc/makepkg.conf
@@ -187,8 +191,6 @@ sed -i s/.*MAKEFLAGS=.*/MAKEFLAGS=\"-j`nproc`\"/ /etc/makepkg.conf
 sed -i s/#BUILDDIR=/BUILDDIR=/ /etc/makepkg.conf
 sed -i s/.*PKGEXT=.*/PKGEXT='.pkg.tar'/ /etc/makepkg.conf
 "
-
-
 
 aur_cmd $RBENV 'https://aur.archlinux.org/packages/rb/rbenv/rbenv.tar.gz'
 aur_cmd $RUBY_BUILD 'https://aur.archlinux.org/packages/ru/ruby-build/ruby-build.tar.gz'
@@ -228,6 +230,35 @@ cd $WORKSPACE
 git clone $REPO/dotfiles.git >> $USER_LOG
 cd dotfiles
 bin/sync.sh >> $USER_LOG
+"
+
+chuser_cmd $VIM 'vim plugins and theme' "
+mkdir -p ~/.vim/bundle
+cd ~/.vim/bundle
+git clone https://github.com/tpope/vim-pathogen.git
+git clone https://github.com/tpope/vim-surround.git
+git clone https://github.com/msanders/snipmate.vim.git
+git clone https://github.com/scrooloose/nerdtree.git
+git clone https://github.com/vim-ruby/vim-ruby.git
+git clone https://github.com/tpope/vim-rails.git
+git clone https://github.com/tpope/vim-rake.git
+git clone https://github.com/tpope/vim-bundler.git
+git clone https://github.com/tpope/vim-haml.git
+git clone https://github.com/tpope/vim-git.git
+git clone https://github.com/tpope/vim-fugitive.git
+git clone https://github.com/tpope/vim-markdown.git
+git clone https://github.com/tpope/vim-dispatch.git
+git clone https://github.com/Keithbsmiley/rspec.vim.git
+git clone https://github.com/mileszs/ack.vim.git
+git clone https://github.com/bling/vim-airline.git
+git clone https://github.com/kien/ctrlp.vim.git
+
+cd ..
+mkdir colors
+cd colors
+curl -O https://raw.githubusercontent.com/tomasr/molokai/master/colors/molokai.vim
+
+vim -c 'Helptags | q'
 "
 
 chuser_cmd $SET_USERPASS 'user password' "echo -e '$USERPASS\n$USERPASS\n' passwd >> $USER_LOG"
