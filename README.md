@@ -54,7 +54,7 @@ All user input is taken at the start to ensure the installation can complete una
 
 This downloads and runs install.sh on the `dev` branch:
 
-    bash <(curl -Ls http://goo.gl/1vmj59)
+    bash <(curl -Ls https://raw.githubusercontent.com/PhilT/arch_installer/dev/install.sh)
 
 
 
