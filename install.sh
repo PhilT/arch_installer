@@ -114,15 +114,7 @@ if [ $BASE ]; then
   echo 'filesystem'
   sgdisk --zap-all /dev/sda
 
-# Line breaks are significant
-  fdisk /dev/sda << EOF
-n
-
-
-
-
-w
-EOF > /dev/null
+  echo -e "n\n\n\n\n\nw\n" | fdisk /dev/sda > /dev/null
   mkfs.ext4 /dev/sda1 > /dev/null
   mount /dev/sda1 /mnt > /dev/null
 
