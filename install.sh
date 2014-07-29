@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 #### VERSION ####
-echo 'Arch Install Script Version 0.1.31'
+echo 'Arch Install Script Version 0.1.33'
 echo '=================================='
 echo ''
 
@@ -159,10 +159,10 @@ aur_cmd () {
   chuser_cmd "install from aur: $name" "
 mkdir -p ~/packages
 cd ~/packages
-curl -0 $url | tar -zx >> $USER_LOG
+curl -s $url | tar -zx
 cd $name
-makepkg -s >> $USER_LOG
-sudo $AUR /tmp/makepkg/$name.pkg.tar
+makepkg -s >> $USER_LOG 2>$1
+echo $USERPASS | sudo -Sn $AUR /tmp/makepkg/$name.pkg.tar >> $USER_LOG 2>$1
 " $run
 }
 
@@ -182,8 +182,8 @@ if [[ $BASE ]]; then
   loadkeys uk
 
   echo 'filesystem' | tee -a $LOG
+  partprobe /dev/sda
   sgdisk --zap-all /dev/sda >> $LOG 2>&1
-
   echo -e "n\n\n\n\n\nw\n" | fdisk /dev/sda >> $LOG 2>&1
   mkfs.ext4 -F /dev/sda1 >> $LOG 2>&1
   mount /dev/sda1 /mnt
