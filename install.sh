@@ -1,13 +1,15 @@
 #!/usr/bin/env bash
 
 #### VERSION ####
-echo 'Arch Install Script Version 0.1.14'
+echo 'Arch Install Script Version 0.1.15'
+echo '=================================='
+echo ''
 
 
 #### VARIABLES ####
 
-USER=phil
-WORKSPACE='~/ws'
+USER='phil'
+WORKSPACE='~/ws' # keep it short for window titles
 PACMAN='pacman -S --noconfirm'
 AUR='pacman -U --noconfirm'
 CHROOT='arch-chroot /mnt /bin/bash -c'
@@ -20,19 +22,16 @@ REPO='git@github.com:PhilT'
 echo 'Choose HOST [server|desktop|laptop]:'
 read HOST
 
-echo 'Choose passwords (Be careful, only asks once)'
+echo 'Choose a user password (Be careful, only asks once)'
 echo 'Press enter to skip and do a dryrun'
-echo 'for root:'
-read -s ROOTPASS
-
-echo "for $USER:"
 read -s USERPASS
 
-[[ ! $ROOTPASS || ! $USERPASS ]] && INSTALL_TYPE=dryrun
+[[ ! $USERPASS ]] && INSTALL_TYPE=dryrun
 
 if [[ $INSTALL_TYPE != 'dryrun' ]]; then
   echo 'Choose an option to begin installation'
   echo 'base - base system only (does not reboot)'
+  echo 'all - complete install except reboot'
   echo 'full - complete install including reboot'
   echo 'dryrun - echo all commands instead of executing them (default)'
   echo 'selected - selected options only - set ENV vars to install'
@@ -42,7 +41,6 @@ fi
 
 if [[ ! $INSTALL_TYPE || $INSTALL_TYPE = 'dryrun' ]]; then
   INSTALL_TYPE='dryrun'
-  ROOTPASS='rootpass'
   USERPASS='userpass'
 fi
 
@@ -52,9 +50,11 @@ case $INSTALL_TYPE in
 'base')
   BASE=true
   ;;
-'full' | 'dryrun')
-  if [[ $INSTALL_TYPE != 'dryrun' ]]; then
+'all' | 'full' | 'dryrun')
+  if [[ $INSTALL_TYPE = 'full' ]]; then
+    BASE=true
     FINALISE=true
+  elif [[ $INSTALL_TYPE = 'all' ]]; then
     BASE=true
   fi
   LOCALE=true
@@ -71,7 +71,6 @@ case $INSTALL_TYPE in
   TTF_MS_FONTS=true
   CUSTOMIZATION=true
   XWINDOWS=true
-  SET_ROOTPASS=true
   BIN=true
   DOTFILES=true
   VIM=true
@@ -245,8 +244,6 @@ chroot_cmd 'xwindows packages and applications' "
 $PACMAN xorg-server xorg-server-utils xorg-xinit elementary-icon-theme xcursor-vanilla-dmz gnome-themes-standard ttf-ubuntu-font-family feh lxappearance rxvt-unicode pcmanfm suckless-tools xautolock conky
 " $XWINDOWS
 
-chroot_cmd 'root password' "echo -e '$ROOTPASS\n$ROOTPASS\n' passwd" $SET_ROOTPASS
-
 
 #### $CHUSER SETUP ####
 
@@ -288,15 +285,14 @@ git clone https://github.com/mileszs/ack.vim.git
 git clone https://github.com/bling/vim-airline.git
 git clone https://github.com/kien/ctrlp.vim.git
 
-cd ..
-mkdir colors
-cd colors
+mkdir -p ~/.vim/colors
+cd ~/.vim/colors
 curl -O https://raw.githubusercontent.com/tomasr/molokai/master/colors/molokai.vim
 
 vim -c 'Helptags | q'
 " $VIM
 
-chuser_cmd 'user password' "echo -e '$USERPASS\n$USERPASS\n' passwd" $SET_USERPASS
+chuser_cmd 'user password' "echo -e '$USERPASS\n$USERPASS\n' | passwd" $SET_USERPASS
 
 #### FINALISE ####
 
