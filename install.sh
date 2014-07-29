@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 #### VERSION ####
-echo 'Arch Install Script Version 0.1.28'
+echo 'Arch Install Script Version 0.1.31'
 echo '=================================='
 echo ''
 
@@ -46,7 +46,7 @@ if [[ ! $INSTALL_TYPE || $INSTALL_TYPE = 'dryrun' ]]; then
   USERPASS='userpass'
 fi
 
-echo "Option Choosen: $INSTALL_TYPE"
+echo "Option Chosen: $INSTALL_TYPE"
 
 #### OPTIONS #####
 
@@ -94,17 +94,17 @@ $(lspci | grep -q VirtualBox) || unset VIRTUALBOX
 #### FUNCTIONS ####
 
 # pull out functions from arch-root and include them
-# Subsequent version of Arch have moved the functions into
-# a common script that can be included instead
-# so this will no longer be needed.
+# A newer version of Arch in development has moved the
+# functions into a common script that can be included
+# instead. So extracting them will no longer be needed.
 sed '/^usage\(\).*/,/^SHELL=.*/d' /usr/bin/arch-chroot > ~/chroot-common
 source ~/chroot-common
 
 chroot_exec () {
   commands="$1"
-  [[ $2 ]] && userspec="--userspec=$2:$2"
+  user=$2
 
-  chroot $userspec /mnt /bin/bash -c "$commands"
+  chroot /mnt su $user -c "$commands"
 }
 
 run_or_dry () {
@@ -302,6 +302,8 @@ cat /etc/modules-load.d/virtualbox.conf >> $LOG 2>&1
 
 
 #### USER SETUP ####
+
+chroot_cmd 'install.log ownership' "cd /home/$USER && touch install.log && chown phil:phil install.log" true
 
 chuser_cmd 'create workspace' "mkdir -p $WORKSPACE >> $USER_LOG 2>&1" $CREATE_WORKSPACE
 
