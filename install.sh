@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 #### VERSION ####
-echo 'Arch Install Script Version 0.1.23'
+echo 'Arch Install Script Version 0.1.26'
 echo '=================================='
 echo ''
 
@@ -12,14 +12,11 @@ USER='phil'
 WORKSPACE='~/ws' # keep it short for window titles
 PACMAN='pacman -S --noconfirm --noprogressbar'
 AUR='pacman -U --noconfirm --noprogressbar'
-CHROOT='arch-chroot /mnt /bin/bash -c'
-CHUSER="arch-chroot /mnt /bin/su $USER -c"
 REPO='git@github.com:PhilT'
 LOG="/var/log/install.log"
 USER_LOG="/home/$USER/install.log"
 MNT_LOG="/mnt$LOG"
 MNT_USER_LOG="/mnt$USER_LOG"
-
 
 
 #### USER INPUT ####
@@ -91,16 +88,32 @@ esac
 [[ $HOST != 'server' ]] && unset SWAPFILE
 $(lspci | grep -q VirtualBox) || unset VIRTUALBOX
 [[ $HOST = 'server' ]] && unset XWINDOWS
-[[ ! $XWINDOW ]] && unset ATOM && unset TTF_MS_FONTS
+[[ ! $XWINDOW ]] && unset ATOM && unset TTF_MS_FONTS && unset VIRTUALBOX
 
 
 #### FUNCTIONS ####
 
+# pull out functions from arch-root and include them
+# Subsequent version of Arch have moved the functions into
+# a common script that can be included instead
+# so this will no longer be needed.
+sed '/^usage\(\).*/,/^SHELL=.*/d' /usr/bin/arch-chroot > ~/chroot-common
+source ~/chroot-common
+
+chroot_exec () {
+  commands="$1"
+  [[ $2 ]] && userspec="--userspec=$2:$2"
+
+  api_fs_mount /mnt || die 'api_fs_mount failed'
+  track_mount /etc/resolv.conf /mnt/etc/resolv.conf --bind
+  chroot /mnt /bin/bash -c "$commands"
+}
+
 run_or_dry () {
-  chroot=$1
-  commands=$2
-  logfile=$3
-  title=$4
+  commands=$1
+  logfile=$2
+  title=$3
+  user=$4
 
   if [[ $INSTALL_TYPE = 'dryrun' ]]; then
     if [[ $title =~ password ]]; then
@@ -109,7 +122,7 @@ run_or_dry () {
       echo -e "$commands" >> $logfile
     fi
   else
-    $chroot "$commands"
+    chroot_exec "$commands" "$user"
   fi
 }
 
@@ -122,7 +135,7 @@ chroot_cmd () {
     echo -e "\n\n" >> $MNT_LOG
     echo -e "$title" | tee -a $MNT_LOG
     echo -e "------------------------------------" >> $MNT_LOG
-    run_or_dry "$CHROOT" "$commands" $MNT_LOG "$title"
+    run_or_dry "$commands" $MNT_LOG "$title"
   fi
 }
 
@@ -135,10 +148,11 @@ chuser_cmd () {
     echo -e "\n\n" >> $MNT_USER_LOG
     echo -e "$title" | tee -a $MNT_USER_LOG
     echo -e "------------------------------------" >> $MNT_USER_LOG
-    run_or_dry "$CHUSER" "$commands" $MNT_USER_LOG "$title"
+    run_or_dry "$commands" $MNT_USER_LOG "$title" $USER
   fi
 }
 
+# Move to dotfiles
 aur_cmd () {
   url=$1
   run=$2
@@ -147,10 +161,10 @@ aur_cmd () {
   chuser_cmd "install from aur: $name" "
 mkdir -p ~/packages
 cd ~/packages
-curl -0 $url | tar -zx >> $LOG
+curl -0 $url | tar -zx >> $USER_LOG
 cd $name
-makepkg -s >> $LOG
-sudo $AUR /tmp/$name.pkg.tar
+makepkg -s >> $USER_LOG
+sudo $AUR /tmp/makepkg/$name.pkg.tar
 " $run
 }
 
@@ -193,7 +207,7 @@ if [[ $BASE ]]; then
   genfstab -p /mnt >> /mnt/etc/fstab
 fi
 
-#### $CHROOT SETUP ####
+#### ROOT SETUP ####
 
 chroot_cmd 'time, locale, keyboard' "
 ln -s /usr/share/zoneinfo/GB /etc/localtime >> $LOG 2>&1
@@ -228,6 +242,8 @@ systemctl enable dhcpcd@enp0s3.service >> $LOG 2>&1
 $PACMAN openssh >> $LOG 2>&1
 " $NETWORK
 
+chroot_cmd 'standard packages' "$PACMAN base-devel git vim >> $LOG 2>&1" $STANDARD
+
 chroot_cmd 'user' "
 useradd -G wheel -s /bin/bash $USER >> $LOG 2>&1
 echo \"$USER ALL=(ALL) ALL\" >> /etc/sudoers.d/general
@@ -237,18 +253,6 @@ cat /etc/sudoers.d/general >> $LOG 2>&1
 " $ADD_USER
 
 chroot_cmd 'user password' "echo -e '$USERPASS\n$USERPASS\n' | passwd $USER >> $LOG" $SET_USERPASS
-
-chroot_cmd 'standard packages' "$PACMAN base-devel git vim >> $LOG 2>&1" $STANDARD
-
-chroot_cmd 'virtualbox guest' "
-$PACMAN virtualbox-guest-utils virtualbox-guest-dkms >> $LOG 2>&1
-echo vboxguest >> /etc/modules-load.d/virtualbox.conf
-echo vboxsf >> /etc/modules-load.d/virtualbox.conf
-echo vboxvideo >> /etc/modules-load.d/virtualbox.conf
-systemctl enable vboxservice.service >> $LOG 2>&1
-echo /etc/modules-load.d/virtualbox.conf >> $LOG 2>&1
-cat /etc/modules-load.d/virtualbox.conf >> $LOG 2>&1
-" $VIRTUALBOX
 
 # optimised for specific architecture and build times
 chroot_cmd 'aur build flags' "
@@ -280,8 +284,18 @@ chroot_cmd 'xwindows packages and applications' "
 $PACMAN xorg-server xorg-server-utils xorg-xinit elementary-icon-theme xcursor-vanilla-dmz gnome-themes-standard ttf-ubuntu-font-family feh lxappearance rxvt-unicode pcmanfm suckless-tools xautolock conky >> $LOG
 " $XWINDOWS
 
+chroot_cmd 'virtualbox guest' "
+$PACMAN virtualbox-guest-utils virtualbox-guest-dkms >> $LOG 2>&1
+echo vboxguest >> /etc/modules-load.d/virtualbox.conf
+echo vboxsf >> /etc/modules-load.d/virtualbox.conf
+echo vboxvideo >> /etc/modules-load.d/virtualbox.conf
+systemctl enable vboxservice.service >> $LOG 2>&1
+echo /etc/modules-load.d/virtualbox.conf >> $LOG 2>&1
+cat /etc/modules-load.d/virtualbox.conf >> $LOG 2>&1
+" $VIRTUALBOX
 
-#### $CHUSER SETUP ####
+
+#### USER SETUP ####
 
 chuser_cmd 'create workspace' "mkdir -p $WORKSPACE >> $USER_LOG" $CREATE_WORKSPACE
 
