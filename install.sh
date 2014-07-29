@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 #### VERSION ####
-echo 'Arch Install Script Version 0.1.26'
+echo 'Arch Install Script Version 0.1.28'
 echo '=================================='
 echo ''
 
@@ -104,16 +104,14 @@ chroot_exec () {
   commands="$1"
   [[ $2 ]] && userspec="--userspec=$2:$2"
 
-  api_fs_mount /mnt || die 'api_fs_mount failed'
-  track_mount /etc/resolv.conf /mnt/etc/resolv.conf --bind
-  chroot /mnt /bin/bash -c "$commands"
+  chroot $userspec /mnt /bin/bash -c "$commands"
 }
 
 run_or_dry () {
-  commands=$1
-  logfile=$2
-  title=$3
-  user=$4
+  commands="$1"
+  logfile="$2"
+  title="$3"
+  user="$4"
 
   if [[ $INSTALL_TYPE = 'dryrun' ]]; then
     if [[ $title =~ password ]]; then
@@ -201,11 +199,18 @@ if [[ $BASE ]]; then
   mkdir -p /mnt/etc/pacman.d
   cp /etc/pacman.d/mirrorlist /mnt/etc/pacman.d/mirrorlist.original
   URL="https://www.archlinux.org/mirrorlist/?country=GB&protocol=http&ip_version=4&use_mirror_status=on"
-  curl $URL | sed 's/^#Server/Server/' > /etc/pacman.d/mirrorlist
+  curl -s $URL | sed 's/^#Server/Server/' > /etc/pacman.d/mirrorlist
   pacman -Syy >> $MNT_LOG 2>&1 # Refresh package lists
   pacstrap /mnt base >> $MNT_LOG 2>&1
   genfstab -p /mnt >> /mnt/etc/fstab
 fi
+
+
+#### MOUNTS FOR CHROOT ####
+
+api_fs_mount /mnt || echo 'api_fs_mount failed' >> $MNT_LOG
+track_mount /etc/resolv.conf /mnt/etc/resolv.conf --bind
+
 
 #### ROOT SETUP ####
 
@@ -248,6 +253,7 @@ chroot_cmd 'user' "
 useradd -G wheel -s /bin/bash $USER >> $LOG 2>&1
 echo \"$USER ALL=(ALL) ALL\" >> /etc/sudoers.d/general
 chmod 440 /etc/sudoers.d/general >> $LOG 2>&1
+chown phil:phil /home/$USER >> $LOG 2>&1
 echo /etc/sudoers.d/general >> $LOG
 cat /etc/sudoers.d/general >> $LOG 2>&1
 " $ADD_USER
@@ -297,7 +303,7 @@ cat /etc/modules-load.d/virtualbox.conf >> $LOG 2>&1
 
 #### USER SETUP ####
 
-chuser_cmd 'create workspace' "mkdir -p $WORKSPACE >> $USER_LOG" $CREATE_WORKSPACE
+chuser_cmd 'create workspace' "mkdir -p $WORKSPACE >> $USER_LOG 2>&1" $CREATE_WORKSPACE
 
 aur_cmd 'https://aur.archlinux.org/packages/rb/rbenv/rbenv.tar.gz' $RBENV
 aur_cmd 'https://aur.archlinux.org/packages/ru/ruby-build/ruby-build.tar.gz' $RUBY_BUILD
@@ -306,14 +312,14 @@ aur_cmd 'https://aur.archlinux.org/packages/at/atom-editor/atom-editor.tar.gz' $
 
 chuser_cmd 'dwm' "
 cd $WORKSPACE
-git clone $REPO/dwm.git >> $USER_LOG
+git clone $REPO/dwm.git >> $USER_LOG 2>&1
 cd dwm
-make clean install >> $USER_LOG
+make clean install >> $USER_LOG 2>&1
 " $XWINDOWS
 
 chuser_cmd 'clone and configure bin' "
 cd ~
-git clone $REPO/bin.git >> $USER_LOG
+git clone $REPO/bin.git >> $USER_LOG 2>&1
 echo PASSWORD_DIR=$WORKSPACE/documents >> ~/.pwconfig
 echo PASSWORD_FILE=.passwords.csv >> ~/.pwconfig
 echo EDIT=vim >> ~/.pwconfig
@@ -321,35 +327,35 @@ echo EDIT=vim >> ~/.pwconfig
 
 chuser_cmd 'clone dotfiles' "
 cd $WORKSPACE
-git clone $REPO/dotfiles.git >> $USER_LOG
+git clone $REPO/dotfiles.git >> $USER_LOG 2>&1
 cd dotfiles
-bin/sync.sh >> $USER_LOG
+bin/sync.sh >> $USER_LOG 2>&1
 " $DOTFILES
 
 chuser_cmd 'vim plugins and theme' "
 mkdir -p ~/.vim/bundle
 cd ~/.vim/bundle
-git clone https://github.com/tpope/vim-pathogen.git >> $USER_LOG
-git clone https://github.com/tpope/vim-surround.git >> $USER_LOG
-git clone https://github.com/msanders/snipmate.vim.git >> $USER_LOG
-git clone https://github.com/scrooloose/nerdtree.git >> $USER_LOG
-git clone https://github.com/vim-ruby/vim-ruby.git >> $USER_LOG
-git clone https://github.com/tpope/vim-rails.git >> $USER_LOG
-git clone https://github.com/tpope/vim-rake.git >> $USER_LOG
-git clone https://github.com/tpope/vim-bundler.git >> $USER_LOG
-git clone https://github.com/tpope/vim-haml.git >> $USER_LOG
-git clone https://github.com/tpope/vim-git.git >> $USER_LOG
-git clone https://github.com/tpope/vim-fugitive.git >> $USER_LOG
-git clone https://github.com/tpope/vim-markdown.git >> $USER_LOG
-git clone https://github.com/tpope/vim-dispatch.git >> $USER_LOG
-git clone https://github.com/Keithbsmiley/rspec.vim.git >> $USER_LOG
-git clone https://github.com/mileszs/ack.vim.git >> $USER_LOG
-git clone https://github.com/bling/vim-airline.git >> $USER_LOG
-git clone https://github.com/kien/ctrlp.vim.git >> $USER_LOG
+git clone https://github.com/tpope/vim-pathogen.git >> $USER_LOG 2>&1
+git clone https://github.com/tpope/vim-surround.git >> $USER_LOG 2>&1
+git clone https://github.com/msanders/snipmate.vim.git >> $USER_LOG 2>&1
+git clone https://github.com/scrooloose/nerdtree.git >> $USER_LOG 2>&1
+git clone https://github.com/vim-ruby/vim-ruby.git >> $USER_LOG 2>&1
+git clone https://github.com/tpope/vim-rails.git >> $USER_LOG 2>&1
+git clone https://github.com/tpope/vim-rake.git >> $USER_LOG 2>&1
+git clone https://github.com/tpope/vim-bundler.git >> $USER_LOG 2>&1
+git clone https://github.com/tpope/vim-haml.git >> $USER_LOG 2>&1
+git clone https://github.com/tpope/vim-git.git >> $USER_LOG 2>&1
+git clone https://github.com/tpope/vim-fugitive.git >> $USER_LOG 2>&1
+git clone https://github.com/tpope/vim-markdown.git >> $USER_LOG 2>&1
+git clone https://github.com/tpope/vim-dispatch.git >> $USER_LOG 2>&1
+git clone https://github.com/Keithbsmiley/rspec.vim.git >> $USER_LOG 2>&1
+git clone https://github.com/mileszs/ack.vim.git >> $USER_LOG 2>&1
+git clone https://github.com/bling/vim-airline.git >> $USER_LOG 2>&1
+git clone https://github.com/kien/ctrlp.vim.git >> $USER_LOG 2>&1
 
 mkdir -p ~/.vim/colors
 cd ~/.vim/colors
-curl -O https://raw.githubusercontent.com/tomasr/molokai/master/colors/molokai.vim >> $USER_LOG
+curl -s -O https://raw.githubusercontent.com/tomasr/molokai/master/colors/molokai.vim >> $USER_LOG 2>&1
 
 vim -c 'Helptags | q'
 " $VIM
