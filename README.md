@@ -5,17 +5,15 @@ Simple script to install and configure Arch Linux.
 
 ## Usage
 
-Boot an Arch Linux Live CD and run the following command:
-
-    bash <(curl -Ls http://goo.gl/tKEBG9)
-
-If you want to run this through SSH (e.g. so you have scrollback):
+Boot an Arch Linux Live CD and run the following commands:
 
     systemctl start sshd
     passwd
     ip a
 
-then ssh into the ip address shown and run the bash-curl line above.
+Then through SSH (so scrollback is available):
+
+    bash <(curl -Ls http://goo.gl/tKEBG9)
 
 
 ## Configurations
