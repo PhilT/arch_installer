@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 #### VERSION ####
-echo 'Arch Install Script Version 0.1.42'
+echo 'Arch Install Script Version 0.1.43'
 echo '=================================='
 echo ''
 
@@ -55,7 +55,7 @@ if [[ $INSTALL = all || $INSTALL = dryrun ]]; then
   [[ $CREATE_WORKSPACE ]] || CREATE_WORKSPACE=true
   [[ $BIN ]] || BIN=true
   [[ $DOTFILES ]] || DOTFILES=true
-  [[ $VIM ]] || VIM=true
+  [[ $VIM_CONFIG ]] || VIM_CONFIG=true
   [[ $SET_USERPASS ]] || SET_USERPASS=true
 fi
 
@@ -138,7 +138,7 @@ makepkg -s -f --noprogressbar >> $USER_LOG 2>&1
 " $run
 
   chroot_cmd "install AUR package: $name" "
-$AUR /tmp/packages/$name*.pkg.tar >> $USER_LOG 2>&1
+$AUR /tmp/$name*.pkg.tar >> $USER_LOG 2>&1
 " $run
 }
 
@@ -243,7 +243,7 @@ sed -i 's/CFLAGS=.*/CFLAGS=\"-march=native -O2 -pipe -fstack-protector-strong --
 sed -i 's/CXXFLAGS=.*/CXXFLAGS=\"\${CFLAGS}\"/' /etc/makepkg.conf
 sed -i 's/.*MAKEFLAGS=.*/MAKEFLAGS=\"-j`nproc`\"/' /etc/makepkg.conf
 sed -i s/#BUILDDIR=/BUILDDIR=/ /etc/makepkg.conf
-sed -i 's/#PKGDEST=.*/PKGDEST=\/tmp\/packages/' /etc/makepkg.conf
+sed -i 's/#PKGDEST=.*/PKGDEST=\/tmp/' /etc/makepkg.conf
 sed -i s/.*PKGEXT=.*/PKGEXT='.pkg.tar'/ /etc/makepkg.conf
 grep '^CFLAGS' /etc/makepkg.conf >> $LOG 2>&1
 grep '^CXXFLAGS' /etc/makepkg.conf >> $LOG 2>&1
@@ -293,6 +293,7 @@ cd /home/$NEWUSER
 cp .ssh/id_rsa.pub .ssh/authorized_keys
 chown -R phil:phil .ssh
 chmod 400 .ssh/id_rsa
+ssh-keyscan -H github.com >> .ssh/known_hosts 2>> $LOG
 " $SSH_KEY
 
 chuser_cmd 'create workspace' "mkdir -p $WORKSPACE >> $USER_LOG 2>&1" $CREATE_WORKSPACE
@@ -350,7 +351,7 @@ cd ~/.vim/colors
 curl -s -O https://raw.githubusercontent.com/tomasr/molokai/master/colors/molokai.vim >> $USER_LOG 2>&1
 
 vim -c 'Helptags | q'
-" $VIM
+" $VIM_CONFIG
 
 
 #### REBOOT ####
