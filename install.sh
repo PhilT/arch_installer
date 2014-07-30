@@ -1,43 +1,47 @@
 #!/usr/bin/env bash
 
 #### VERSION ####
-echo 'Arch Install Script Version 0.1.33'
+echo 'Arch Install Script Version 0.1.40'
 echo '=================================='
 echo ''
 
 
 #### VARIABLES ####
 
-USER='phil'
-WORKSPACE='~/ws' # keep it short for window titles
+[[ $NEWUSER ]] || NEWUSER='phil'
+[[ $WORKSPACE ]] || WORKSPACE='~/ws' # keep it short for window titles
 PACMAN='pacman -S --noconfirm --noprogressbar'
 AUR='pacman -U --noconfirm --noprogressbar'
 REPO='git@github.com:PhilT'
 LOG="/var/log/install.log"
-USER_LOG="/home/$USER/install.log"
+USER_LOG="/home/$NEWUSER/install.log"
 MNT_LOG="/mnt$LOG"
 MNT_USER_LOG="/mnt$USER_LOG"
 
 
 #### USER INPUT ####
 
-echo 'Choose HOST [server|desktop|laptop]:'
-read HOST
+if [[ ! $HOST ]]; then
+  echo 'Choose HOST [server|desktop|laptop]:'
+  read HOST
+fi
 
-echo 'Choose a user password (Be careful, only asks once)'
-echo 'Press enter to skip and do a dryrun'
-read -s USERPASS
+if [[ ! $USERPASS ]]; then
+  echo 'Choose a user password (Be careful, only asks once)'
+  echo 'Press enter to skip and do a dryrun'
+  read -s USERPASS
+fi
 
-[[ ! $USERPASS ]] && INSTALL_TYPE=dryrun
+[[ ! $USERPASS ]] && INSTALL_TYPE='dryrun'
 
-if [[ $INSTALL_TYPE != 'dryrun' ]]; then
-  echo 'Choose an option to begin installation'
-  echo 'base - base system only (does not reboot)'
-  echo 'all - complete install except reboot'
-  echo 'full - complete install including reboot'
-  echo 'dryrun - echo all commands instead of executing them (default)'
-  echo 'selected - selected options only - set ENV vars to install'
-  echo '.'
+if [[ ! $INSTALL_TYPE ]]; then
+  echo 'Installation Type'
+  echo '-----------------------------------------------------'
+  echo 'base      - base system only (BASE option only)'
+  echo 'full      - complete install'
+  echo 'dryrun    - log commands instead of executing them  (default)'
+  echo 'selected  - set ENV vars to install options'
+  echo 'Enter an install type and press enter:'
   read INSTALL_TYPE
 fi
 
@@ -46,49 +50,39 @@ if [[ ! $INSTALL_TYPE || $INSTALL_TYPE = 'dryrun' ]]; then
   USERPASS='userpass'
 fi
 
-echo "Option Chosen: $INSTALL_TYPE"
+echo "HOST: $HOST"
+echo "INSTALL_TYPE: $INSTALL_TYPE"
 
 #### OPTIONS #####
 
-case $INSTALL_TYPE in
-'base')
-  BASE=true
-  ;;
-'all' | 'full' | 'dryrun')
-  if [[ $INSTALL_TYPE = 'full' ]]; then
-    BASE=true
-    FINALISE=true
-  elif [[ $INSTALL_TYPE = 'all' ]]; then
-    BASE=true
-  fi
-  LOCALE=true
-  SWAPFILE=true
-  BOOTLOADER=true
-  NETWORK=true
-  ADD_USER=true
-  STANDARD=true
-  VIRTUALBOX=true
-  AUR_BUILD_FLAGS=true
-  RBENV=true
-  RUBY_BUILD=true
-  ATOM=true
-  TTF_MS_FONTS=true
-  CUSTOMIZATION=true
-  XWINDOWS=true
-  CREATE_WORKSPACE=true
-  BIN=true
-  DOTFILES=true
-  VIM=true
-  SET_USERPASS=true
-  ;;
-'selected')
-  ;;
-esac
+[[ $INSTALL_TYPE = base || $INSTALL_TYPE = full ]] && BASE=true
 
-[[ $HOST != 'server' ]] && unset SWAPFILE
-$(lspci | grep -q VirtualBox) || unset VIRTUALBOX
-[[ $HOST = 'server' ]] && unset XWINDOWS
-[[ ! $XWINDOW ]] && unset ATOM && unset TTF_MS_FONTS && unset VIRTUALBOX
+if [[ $INSTALL_TYPE = full || $INSTALL_TYPE = dryrun ]]; then
+  [[ $LOCALE ]] || LOCALE=true
+  [[ $SWAPFILE ]] || SWAPFILE=true
+  [[ $BOOTLOADER ]] || BOOTLOADER=true
+  [[ $NETWORK ]] || NETWORK=true
+  [[ $ADD_USER ]] || ADD_USER=true
+  [[ $STANDARD ]] || STANDARD=true
+  [[ $VIRTUALBOX ]] || VIRTUALBOX=true
+  [[ $AUR_FLAGS ]] || AUR_FLAGS=true
+  [[ $RBENV ]] || RBENV=true
+  [[ $RUBY_BUILD ]] || RUBY_BUILD=true
+  [[ $ATOM ]] || ATOM=true
+  [[ $TTF_MS_FONTS ]] || TTF_MS_FONTS=true
+  [[ $CUSTOMIZATION ]] || CUSTOMIZATION=true
+  [[ $XWINDOWS ]] || XWINDOWS=true
+  [[ $CREATE_WORKSPACE ]] || CREATE_WORKSPACE=true
+  [[ $BIN ]] || BIN=true
+  [[ $DOTFILES ]] || DOTFILES=true
+  [[ $VIM ]] || VIM=true
+  [[ $SET_USERPASS ]] || SET_USERPASS=true
+fi
+
+[[ $HOST != 'server' ]] && SWAPFILE=false
+$(lspci | grep -q VirtualBox) || VIRTUALBOX=false
+[[ $HOST = 'server' ]] && XWINDOWS=false
+[[ ! $XWINDOW ]] && ATOM=false && TTF_MS_FONTS=false && VIRTUALBOX=false
 
 
 #### FUNCTIONS ####
@@ -113,7 +107,7 @@ run_or_dry () {
   title="$3"
   user="$4"
 
-  if [[ $INSTALL_TYPE = 'dryrun' ]]; then
+  if [[ $INSTALL_TYPE = dryrun ]]; then
     if [[ $title =~ password ]]; then
       echo -e "$title" "$commands" >> $logfile
     else
@@ -129,7 +123,7 @@ chroot_cmd () {
   commands="$2"
   run="$3"
 
-  if [[ $run ]]; then
+  if [[ $run = true ]]; then
     echo -e "\n\n" >> $MNT_LOG
     echo -e "$title" | tee -a $MNT_LOG
     echo -e "------------------------------------" >> $MNT_LOG
@@ -142,11 +136,11 @@ chuser_cmd () {
   commands="$2"
   run="$3"
 
-  if [[ $run ]]; then
+  if [[ $run = true ]]; then
     echo -e "\n\n" >> $MNT_USER_LOG
     echo -e "$title" | tee -a $MNT_USER_LOG
     echo -e "------------------------------------" >> $MNT_USER_LOG
-    run_or_dry "$commands" $MNT_USER_LOG "$title" $USER
+    run_or_dry "$commands" $MNT_USER_LOG "$title" $NEWUSER
   fi
 }
 
@@ -156,13 +150,16 @@ aur_cmd () {
   run=$2
 
   name=`basename $url .tar.gz`
-  chuser_cmd "install from aur: $name" "
+  chuser_cmd "build AUR package: $name" "
 mkdir -p ~/packages
 cd ~/packages
 curl -s $url | tar -zx
 cd $name
-makepkg -s >> $USER_LOG 2>$1
-echo $USERPASS | sudo -Sn $AUR /tmp/makepkg/$name.pkg.tar >> $USER_LOG 2>$1
+makepkg -s -f --noprogressbar >> $USER_LOG 2>&1
+" $run
+
+  chroot_cmd "install AUR package: $name" "
+$AUR /tmp/packages/$name*.pkg.tar >> $USER_LOG 2>&1
 " $run
 }
 
@@ -175,7 +172,7 @@ fi
 
 #### BASE INSTALL ####
 
-if [[ $BASE ]]; then
+if [[ $BASE = true ]]; then
   echo -e "\n\nstarting installation" | tee -a $LOG
 
   echo 'keyboard' | tee -a $LOG
@@ -250,15 +247,15 @@ $PACMAN openssh >> $LOG 2>&1
 chroot_cmd 'standard packages' "$PACMAN base-devel git vim >> $LOG 2>&1" $STANDARD
 
 chroot_cmd 'user' "
-useradd -G wheel -s /bin/bash $USER >> $LOG 2>&1
-echo \"$USER ALL=(ALL) ALL\" >> /etc/sudoers.d/general
+useradd -G wheel -s /bin/bash $NEWUSER >> $LOG 2>&1
+echo \"$NEWUSER ALL=(ALL) ALL\" >> /etc/sudoers.d/general
 chmod 440 /etc/sudoers.d/general >> $LOG 2>&1
-chown phil:phil /home/$USER >> $LOG 2>&1
+chown phil:phil /home/$NEWUSER >> $LOG 2>&1
 echo /etc/sudoers.d/general >> $LOG
 cat /etc/sudoers.d/general >> $LOG 2>&1
 " $ADD_USER
 
-chroot_cmd 'user password' "echo -e '$USERPASS\n$USERPASS\n' | passwd $USER >> $LOG" $SET_USERPASS
+chroot_cmd 'user password' "echo -e '$USERPASS\n$USERPASS\n' | passwd $NEWUSER >> $LOG 2>&1" $SET_USERPASS
 
 # optimised for specific architecture and build times
 chroot_cmd 'aur build flags' "
@@ -267,20 +264,21 @@ sed -i 's/CFLAGS=.*/CFLAGS=\"-march=native -O2 -pipe -fstack-protector-strong --
 sed -i 's/CXXFLAGS=.*/CXXFLAGS=\"\${CFLAGS}\"/' /etc/makepkg.conf
 sed -i 's/.*MAKEFLAGS=.*/MAKEFLAGS=\"-j`nproc`\"/' /etc/makepkg.conf
 sed -i s/#BUILDDIR=/BUILDDIR=/ /etc/makepkg.conf
+sed -i 's/#PKGDEST=.*/PKGDEST=\/tmp\/packages/' /etc/makepkg.conf
 sed -i s/.*PKGEXT=.*/PKGEXT='.pkg.tar'/ /etc/makepkg.conf
 grep '^CFLAGS' /etc/makepkg.conf >> $LOG 2>&1
 grep '^CXXFLAGS' /etc/makepkg.conf >> $LOG 2>&1
 grep '^MAKEFLAGS' /etc/makepkg.conf >> $LOG 2>&1
 grep '^BUILDDIR' /etc/makepkg.conf >> $LOG 2>&1
+grep '^PKGDEST' /etc/makepkg.conf >> $LOG 2>&1
 grep '^PKGEXT' /etc/makepkg.conf >> $LOG 2>&1
-
-" $AUR_BUILD_FLAGS
+" $AUR_FLAGS
 
 chroot_cmd 'pacman & sudoer customization' "
 cp /etc/pacman.conf /etc/pacman.conf.original
 sed -i s/#Color/Color/ /etc/pacman.conf
-echo '$USER ALL=NOPASSWD:/sbin/shutdown' >> /etc/sudoers.d/shutdown
-echo '$USER ALL=NOPASSWD:/sbin/reboot' >> /etc/sudoers.d/shutdown
+echo '$NEWUSER ALL=NOPASSWD:/sbin/shutdown' >> /etc/sudoers.d/shutdown
+echo '$NEWUSER ALL=NOPASSWD:/sbin/reboot' >> /etc/sudoers.d/shutdown
 chmod 440 /etc/sudoers.d/shutdown >> $LOG 2>&1
 echo /etc/sudoers.d/shutdown >> $LOG
 cat /etc/sudoers.d/shutdown >> $LOG 2>&1
@@ -303,7 +301,7 @@ cat /etc/modules-load.d/virtualbox.conf >> $LOG 2>&1
 
 #### USER SETUP ####
 
-chroot_cmd 'install.log ownership' "cd /home/$USER && touch install.log && chown phil:phil install.log" true
+chroot_cmd 'install.log ownership' "cd /home/$NEWUSER && touch install.log && chown phil:phil install.log" true
 
 chuser_cmd 'create workspace' "mkdir -p $WORKSPACE >> $USER_LOG 2>&1" $CREATE_WORKSPACE
 
@@ -363,9 +361,9 @@ vim -c 'Helptags | q'
 " $VIM
 
 
-#### FINALISE ####
+#### REBOOT ####
 
-if [[ $FINALISE ]]; then
+if [[ $REBOOT = true ]]; then
   umount -R /mnt
   reboot
 fi

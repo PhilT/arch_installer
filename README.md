@@ -21,7 +21,7 @@ then ssh into the ip address shown and run the bash-curl line above.
 ## Configurations
 
 
-Detects if using VirtualBox and installs guest additions.
+Detects if using VirtualBox and X and installs guest additions.
 
 ### server
 
@@ -45,9 +45,15 @@ VirtualBox VM 4GB RAM
 
 System-wide configuration files that will be modified by this script are first copied to a file with the extension .original (e.g. /etc/pacman.conf.original).
 
-The file system is setup with a single partition and no swap file.
+The file system is setup with a single partition and swap file.
 
-All user input is taken at the start to ensure the installation can complete unattended.
+All user input is taken at the start to ensure the installation can complete unattended. Options can be specified as env variables to avoid all interaction. HOST, USERPASS and INSTALL_TYPE can all be set along with all options (see install.sh for available options). Specify REBOOT=true if you wish to umount and reboot once the installation is complete. When specifying full or dryrun INSTALL_TYPE options can be turned off with OPTION=false.
+
+There are 3 log files generated on installation.
+
+* /var/log/install.log - Initial partition creation and formatting
+* /mnt/var/log/install.log - For root commands once partition is available
+* /mnt/home/user/install.log - Non root commands
 
 
 ## Development
