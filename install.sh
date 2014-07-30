@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 #### VERSION ####
-echo 'Arch Install Script Version 0.1.40'
+echo 'Arch Install Script Version 0.1.41'
 echo '=================================='
 echo ''
 
@@ -72,6 +72,7 @@ if [[ $INSTALL_TYPE = full || $INSTALL_TYPE = dryrun ]]; then
   [[ $TTF_MS_FONTS ]] || TTF_MS_FONTS=true
   [[ $CUSTOMIZATION ]] || CUSTOMIZATION=true
   [[ $XWINDOWS ]] || XWINDOWS=true
+  [[ $SSH_KEY ]] || SSH_KEY=true
   [[ $CREATE_WORKSPACE ]] || CREATE_WORKSPACE=true
   [[ $BIN ]] || BIN=true
   [[ $DOTFILES ]] || DOTFILES=true
@@ -301,7 +302,20 @@ cat /etc/modules-load.d/virtualbox.conf >> $LOG 2>&1
 
 #### USER SETUP ####
 
-chroot_cmd 'install.log ownership' "cd /home/$NEWUSER && touch install.log && chown phil:phil install.log" true
+chroot_cmd 'install.log ownership' "
+cd /home/$NEWUSER
+touch install.log
+chown phil:phil install.log
+" true
+
+mkdir -p /mnt/home/$NEWUSER/.ssh
+cp id_rsa* /mnt/home/$NEWUSER/.ssh
+chroot_cmd 'ssh key ownership' "
+cd /home/$NEWUSER
+cp .ssh/id_rsa.pub .ssh/authorized_keys
+chown -R phil:phil .ssh
+chmod 400 .ssh/id_rsa
+" $SSH_KEY
 
 chuser_cmd 'create workspace' "mkdir -p $WORKSPACE >> $USER_LOG 2>&1" $CREATE_WORKSPACE
 
