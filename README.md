@@ -21,6 +21,11 @@ then ssh into the ip address shown and run the bash-curl line:
     bash <(curl -Ls http://goo.gl/tKEBG9)
 
 
+you can preset all options for non-interactive (note passwords are insecure but useful for testing):
+
+    MACHINE=server USERPASS=password INSTALL=all REBOOT=true bash <(curl -Ls http://goo.gl/tKEBG9)
+
+
 
 ## Configurations
 
@@ -51,7 +56,16 @@ System-wide configuration files that will be modified by this script are first c
 
 The file system is setup with a single partition and swap file.
 
-All user input is taken at the start to ensure the installation can complete unattended. Options can be specified as env variables to avoid all interaction. HOST, USERPASS and INSTALL_TYPE can all be set along with all options (see install.sh for available options). Specify REBOOT=true if you wish to umount and reboot once the installation is complete. When specifying full or dryrun INSTALL_TYPE options can be turned off with OPTION=false.
+The only user input is the password taken at the start to ensure the installation can complete unattended.
+
+All other options are specified as env variables.
+
+* `MACHINE` - specify 'server' to ensure X and anything that depends on X is not installed
+* `USERPASS` - Insecure but handy for testing (prompts when none already specified)
+* `INSTALL` -  `all` - selects all options except for `REBOOT`
+               `dryrun` - selects  all options but echos commands to log files instead of executing
+* `REBOOT=` - `true` if you wish to unmount and reboot once the installation is complete
+* `OPTION=` - `false` to turn off options
 
 There are 3 log files generated on installation.
 

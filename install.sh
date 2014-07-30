@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 #### VERSION ####
-echo 'Arch Install Script Version 0.1.41'
+echo 'Arch Install Script Version 0.1.42'
 echo '=================================='
 echo ''
 
@@ -21,43 +21,22 @@ MNT_USER_LOG="/mnt$USER_LOG"
 
 #### USER INPUT ####
 
-if [[ ! $HOST ]]; then
-  echo 'Choose HOST [server|desktop|laptop]:'
-  read HOST
-fi
+[[ $MACHINE ]] || MACHINE='(not specified)'
+
+[[ $INSTALL = dryrun ]] && USERPASS='userpass'
 
 if [[ ! $USERPASS ]]; then
   echo 'Choose a user password (Be careful, only asks once)'
-  echo 'Press enter to skip and do a dryrun'
   read -s USERPASS
 fi
 
-[[ ! $USERPASS ]] && INSTALL_TYPE='dryrun'
-
-if [[ ! $INSTALL_TYPE ]]; then
-  echo 'Installation Type'
-  echo '-----------------------------------------------------'
-  echo 'base      - base system only (BASE option only)'
-  echo 'full      - complete install'
-  echo 'dryrun    - log commands instead of executing them  (default)'
-  echo 'selected  - set ENV vars to install options'
-  echo 'Enter an install type and press enter:'
-  read INSTALL_TYPE
-fi
-
-if [[ ! $INSTALL_TYPE || $INSTALL_TYPE = 'dryrun' ]]; then
-  INSTALL_TYPE='dryrun'
-  USERPASS='userpass'
-fi
-
-echo "HOST: $HOST"
-echo "INSTALL_TYPE: $INSTALL_TYPE"
+echo "MACHINE: $MACHINE"
+echo "INSTALL: $INSTALL"
 
 #### OPTIONS #####
 
-[[ $INSTALL_TYPE = base || $INSTALL_TYPE = full ]] && BASE=true
-
-if [[ $INSTALL_TYPE = full || $INSTALL_TYPE = dryrun ]]; then
+if [[ $INSTALL = all || $INSTALL = dryrun ]]; then
+  [[ $BASE ]] || BASE=true
   [[ $LOCALE ]] || LOCALE=true
   [[ $SWAPFILE ]] || SWAPFILE=true
   [[ $BOOTLOADER ]] || BOOTLOADER=true
@@ -80,9 +59,8 @@ if [[ $INSTALL_TYPE = full || $INSTALL_TYPE = dryrun ]]; then
   [[ $SET_USERPASS ]] || SET_USERPASS=true
 fi
 
-[[ $HOST != 'server' ]] && SWAPFILE=false
 $(lspci | grep -q VirtualBox) || VIRTUALBOX=false
-[[ $HOST = 'server' ]] && XWINDOWS=false
+[[ $MACHINE = 'server' ]] && XWINDOWS=false
 [[ ! $XWINDOW ]] && ATOM=false && TTF_MS_FONTS=false && VIRTUALBOX=false
 
 
@@ -108,7 +86,7 @@ run_or_dry () {
   title="$3"
   user="$4"
 
-  if [[ $INSTALL_TYPE = dryrun ]]; then
+  if [[ $INSTALL = dryrun ]]; then
     if [[ $title =~ password ]]; then
       echo -e "$title" "$commands" >> $logfile
     else
@@ -164,7 +142,7 @@ $AUR /tmp/packages/$name*.pkg.tar >> $USER_LOG 2>&1
 " $run
 }
 
-if [[ $INSTALL_TYPE = 'dryrun' ]]; then
+if [[ $INSTALL = 'dryrun' ]]; then
   MNT_LOG=$LOG
   USER_LOG="install.log"
   MNT_USER_LOG=$USER_LOG
@@ -173,7 +151,7 @@ fi
 
 #### BASE INSTALL ####
 
-if [[ $BASE = true ]]; then
+if [[ $BASE = true && $INSTALL != dryrun ]]; then
   echo -e "\n\nstarting installation" | tee -a $LOG
 
   echo 'keyboard' | tee -a $LOG
@@ -238,8 +216,8 @@ grub-mkconfig -o /boot/grub/grub.cfg >> $LOG 2>&1
 
 chroot_cmd 'network (inc sshd)' "
 cp /etc/hosts /etc/hosts.original
-echo $HOST > /etc/hostname
-echo 127.0.0.1 localhost.localdomain localhost $HOST > /etc/hosts
+echo $MACHINE > /etc/hostname
+echo 127.0.0.1 localhost.localdomain localhost $MACHINE > /etc/hosts
 echo ::1       localhost.localdomain localhost >> /etc/hosts
 systemctl enable dhcpcd@enp0s3.service >> $LOG 2>&1
 $PACMAN openssh >> $LOG 2>&1
