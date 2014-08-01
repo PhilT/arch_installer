@@ -2,6 +2,12 @@
 
 Simple script to install and configure Arch Linux.
 
+## Assumptions
+
+* Drive to install to is assumed to be `sda`
+* Single network card (name is detected)
+
+
 
 ## Usage
 

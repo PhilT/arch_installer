@@ -41,6 +41,7 @@ if [[ $INSTALL = all || $INSTALL = dryrun ]]; then
   [[ $SWAPFILE ]] || SWAPFILE=true
   [[ $BOOTLOADER ]] || BOOTLOADER=true
   [[ $NETWORK ]] || NETWORK=true
+  [[ $SSH_SERVER ]] || ([[ MACHINE = server ]] && SSH_SERVER=true)
   [[ $ADD_USER ]] || ADD_USER=true
   [[ $STANDARD ]] || STANDARD=true
   [[ $VIRTUALBOX ]] || VIRTUALBOX=true
@@ -61,7 +62,7 @@ fi
 
 $(lspci | grep -q VirtualBox) || VIRTUALBOX=false
 [[ $MACHINE = 'server' ]] && XWINDOWS=false
-[[ ! $XWINDOW ]] && ATOM=false && TTF_MS_FONTS=false && VIRTUALBOX=false
+[[ ! $XWINDOW ]] && (ATOM=false; TTF_MS_FONTS=false; VIRTUALBOX=false)
 
 
 #### FUNCTIONS ####
@@ -197,7 +198,7 @@ sed -i s/#en_GB.UTF-8/en_GB.UTF-8/ /etc/locale.gen
 locale-gen >> $LOG 2>&1
 echo LANG=\"en_GB.UTF-8\" > /etc/locale.conf
 $PACMAN ntp >> $LOG 2>&1
-systemctl enable ntpd.service >> $LOG 2>&1
+systemctl enable ntpd >> $LOG 2>&1
 ntpd -qg >> $LOG 2>&1
 hwclock --systohc >> $LOG 2>&1
 echo KEYMAP=\"uk\" > /etc/vconsole.conf
@@ -216,16 +217,25 @@ grub-install --target=i386-pc --recheck /dev/sda >> $LOG 2>&1
 grub-mkconfig -o /boot/grub/grub.cfg >> $LOG 2>&1
 " $BOOTLOADER
 
-chroot_cmd 'network (inc sshd)' "
+chroot_cmd 'network (inc ssh)' "
 cp /etc/hosts /etc/hosts.original
 echo $MACHINE > /etc/hostname
 echo 127.0.0.1 localhost.localdomain localhost $MACHINE > /etc/hosts
 echo ::1       localhost.localdomain localhost >> /etc/hosts
-systemctl enable dhcpcd@enp0s3.service >> $LOG 2>&1
+nic_name=$(ls /sys/class/net | grep -vm 1 lo)
+systemctl enable dhcpcd@\$nic_name >> $LOG 2>&1
 $PACMAN openssh >> $LOG 2>&1
 " $NETWORK
 
-chroot_cmd 'standard packages' "$PACMAN base-devel git vim >> $LOG 2>&1" $STANDARD
+chroot_cmd 'ssh server' "
+sed -i 's/#?PermitRootLogin.*/PermitRootLogin no/' /etc/ssh/sshd_config
+systemctl enable sshd >> $LOG 2>&1
+" $SSH_SERVER
+
+# chroot_cmd 'desktop packages' "
+# " $DESKTOP
+
+chroot_cmd 'standard packages' "$PACMAN base-devel git vim unison >> $LOG 2>&1" $STANDARD
 
 chroot_cmd 'user' "
 useradd -G wheel -s /bin/bash $NEWUSER >> $LOG 2>&1
@@ -274,7 +284,7 @@ $PACMAN virtualbox-guest-utils virtualbox-guest-dkms >> $LOG 2>&1
 echo vboxguest >> /etc/modules-load.d/virtualbox.conf
 echo vboxsf >> /etc/modules-load.d/virtualbox.conf
 echo vboxvideo >> /etc/modules-load.d/virtualbox.conf
-systemctl enable vboxservice.service >> $LOG 2>&1
+systemctl enable vboxservice >> $LOG 2>&1
 echo /etc/modules-load.d/virtualbox.conf >> $LOG 2>&1
 cat /etc/modules-load.d/virtualbox.conf >> $LOG 2>&1
 " $VIRTUALBOX
@@ -359,6 +369,7 @@ vim -c 'Helptags | q'
 #### REBOOT ####
 
 if [[ $REBOOT = true ]]; then
+  echo 'rebooting...'
   umount -R /mnt
   reboot
 fi
