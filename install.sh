@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 #### VERSION ####
-echo 'Arch Install Script Version 0.2.0'
+echo 'Arch Install Script Version 0.2.1'
 echo '================================='
 echo ''
 
@@ -26,7 +26,7 @@ MNT_USER_LOG="/mnt$USER_LOG"
 [[ $INSTALL = dryrun ]] && USERPASS='userpass'
 
 if [[ ! $USERPASS ]]; then
-  echo 'Choose a user password (Be careful, only asks once)'
+  echo 'Choose a user password (Asks once, used for root as well)'
   read -s USERPASS
 fi
 
@@ -245,6 +245,8 @@ chown phil:phil /home/$NEWUSER >> $LOG 2>&1
 echo /etc/sudoers.d/general >> $LOG
 cat /etc/sudoers.d/general >> $LOG 2>&1
 " $ADD_USER
+
+chroot_cmd 'root password' "echo -e '$USERPASS\n$USERPASS\n' | passwd >> $LOG 2>&1" $SET_USERPASS
 
 chroot_cmd 'user password' "echo -e '$USERPASS\n$USERPASS\n' | passwd $NEWUSER >> $LOG 2>&1" $SET_USERPASS
 
