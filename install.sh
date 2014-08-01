@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
 #### VERSION ####
-echo 'Arch Install Script Version 0.1.43'
-echo '=================================='
+echo 'Arch Install Script Version 0.2.0'
+echo '================================='
 echo ''
 
 
@@ -190,15 +190,17 @@ track_mount /etc/resolv.conf /mnt/etc/resolv.conf --bind
 
 #### ROOT SETUP ####
 
+
 chroot_cmd 'time, locale, keyboard' "
 ln -s /usr/share/zoneinfo/GB /etc/localtime >> $LOG 2>&1
-echo en_GB.UTF-8 UTF-8 >> /etc/locale.gen
+sed -i s/#en_GB.UTF-8/en_GB.UTF-8/ /etc/locale.gen
 locale-gen >> $LOG 2>&1
+echo LANG=\"en_GB.UTF-8\" > /etc/locale.conf
 $PACMAN ntp >> $LOG 2>&1
 systemctl enable ntpd.service >> $LOG 2>&1
 ntpd -qg >> $LOG 2>&1
 hwclock --systohc >> $LOG 2>&1
-echo KEYMAP=\"uk\" >> /etc/vconsole.conf
+echo KEYMAP=\"uk\" > /etc/vconsole.conf
 " $LOCALE
 
 chroot_cmd 'swap file' "
