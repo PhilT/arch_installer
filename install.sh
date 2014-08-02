@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 #### VERSION ####
-echo 'Arch Install Script Version 0.2.1'
+echo 'Arch Install Script Version 0.2.2'
 echo '================================='
 echo ''
 
@@ -13,21 +13,25 @@ echo ''
 PACMAN='pacman -S --noconfirm --noprogressbar'
 AUR='pacman -U --noconfirm --noprogressbar'
 REPO='git@github.com:PhilT'
-LOG="/var/log/install.log"
-USER_LOG="/home/$NEWUSER/install.log"
+LOG="/home/$NEWUSER/install.log"
 MNT_LOG="/mnt$LOG"
-MNT_USER_LOG="/mnt$USER_LOG"
+TMP_LOG="/tmp/install.log"
 
 
 #### USER INPUT ####
 
-[[ $MACHINE ]] || MACHINE='(not specified)'
+if [[ ! $MACHINE ]]; then
+  echo 'Enter a machine name (Used as hostname)'
+  read -s MACHINE
+fi
 
-[[ $INSTALL = dryrun ]] && USERPASS='userpass'
+[[ ! $MACHINE ]] && echo 'No machine specified (MACHINE=)' && exit 1
 
-if [[ ! $USERPASS ]]; then
+[[ $INSTALL = dryrun ]] && PASSWORD='pass1234'
+
+if [[ ! $PASSWORD ]]; then
   echo 'Choose a user password (Asks once, used for root as well)'
-  read -s USERPASS
+  read -s PASSWORD
 fi
 
 echo "MACHINE: $MACHINE"
@@ -41,7 +45,7 @@ if [[ $INSTALL = all || $INSTALL = dryrun ]]; then
   [[ $SWAPFILE ]] || SWAPFILE=true
   [[ $BOOTLOADER ]] || BOOTLOADER=true
   [[ $NETWORK ]] || NETWORK=true
-  [[ $SSH_SERVER ]] || ([[ MACHINE = server ]] && SSH_SERVER=true)
+  [[ $SERVER ]] || ([[ $MACHINE = server ]] && SERVER=true)
   [[ $ADD_USER ]] || ADD_USER=true
   [[ $STANDARD ]] || STANDARD=true
   [[ $VIRTUALBOX ]] || VIRTUALBOX=true
@@ -57,7 +61,7 @@ if [[ $INSTALL = all || $INSTALL = dryrun ]]; then
   [[ $BIN ]] || BIN=true
   [[ $DOTFILES ]] || DOTFILES=true
   [[ $VIM_CONFIG ]] || VIM_CONFIG=true
-  [[ $SET_USERPASS ]] || SET_USERPASS=true
+  [[ $SET_PASSWORD ]] || SET_PASSWORD=true
 fi
 
 $(lspci | grep -q VirtualBox) || VIRTUALBOX=false
@@ -74,54 +78,34 @@ $(lspci | grep -q VirtualBox) || VIRTUALBOX=false
 sed '/^usage\(\).*/,/^SHELL=.*/d' /usr/bin/arch-chroot > ~/chroot-common
 source ~/chroot-common
 
-chroot_exec () {
-  commands="$1"
-  user=$2
-
-  chroot /mnt su $user -c "$commands"
-}
-
-run_or_dry () {
-  commands="$1"
-  logfile="$2"
-  title="$3"
-  user="$4"
-
-  if [[ $INSTALL = dryrun ]]; then
-    if [[ $title =~ password ]]; then
-      echo -e "$title" "$commands" >> $logfile
-    else
-      echo -e "$commands" >> $logfile
-    fi
-  else
-    chroot_exec "$commands" "$user"
-  fi
-}
-
 chroot_cmd () {
   title="$1"
-  commands="$2"
+  cmds="$2"
   run="$3"
+  user="$4"
 
   if [[ $run = true ]]; then
-    echo -e "\n\n" >> $MNT_LOG
+    echo -e "\n" >> $MNT_LOG
+    echo -e "====================================" >> $MNT_LOG
     echo -e "$title" | tee -a $MNT_LOG
+    echo -e "====================================" >> $MNT_LOG
+    if [[ $title =~ 'password' ]]; then
+      echo -e "(password command hidden)"
+    else
+      echo -e "$cmds" >> $MNT_LOG
+    fi
+
+    if [[ $INSTALL != dryrun ]]; then
+      echo -e "------------------------------------" >> $MNT_LOG
+      chroot /mnt su $user -c "$cmds"
+    fi
+
     echo -e "------------------------------------" >> $MNT_LOG
-    run_or_dry "$commands" $MNT_LOG "$title"
   fi
 }
 
 chuser_cmd () {
-  title="$1"
-  commands="$2"
-  run="$3"
-
-  if [[ $run = true ]]; then
-    echo -e "\n\n" >> $MNT_USER_LOG
-    echo -e "$title" | tee -a $MNT_USER_LOG
-    echo -e "------------------------------------" >> $MNT_USER_LOG
-    run_or_dry "$commands" $MNT_USER_LOG "$title" $NEWUSER
-  fi
+  chroot_cmd "$1" "$2" $"3" $NEWUSER
 }
 
 # Move to dotfiles
@@ -135,42 +119,40 @@ mkdir -p ~/packages
 cd ~/packages
 curl -s $url | tar -zx
 cd $name
-makepkg -s -f --noprogressbar >> $USER_LOG 2>&1
+makepkg -s -f --noprogressbar >> $LOG 2>&1
 " $run
 
   chroot_cmd "install AUR package: $name" "
-$AUR /tmp/$name*.pkg.tar >> $USER_LOG 2>&1
+$AUR /tmp/$name*.pkg.tar >> $LOG 2>&1
 " $run
 }
 
 if [[ $INSTALL = 'dryrun' ]]; then
+  LOG='install.log'
   MNT_LOG=$LOG
-  USER_LOG="install.log"
-  MNT_USER_LOG=$USER_LOG
 fi
 
 
 #### BASE INSTALL ####
 
 if [[ $BASE = true && $INSTALL != dryrun ]]; then
-  echo -e "\n\nstarting installation" | tee -a $LOG
+  echo -e "\n\nstarting installation" | tee -a $TMP_LOG
 
-  echo 'keyboard' | tee -a $LOG
+  echo 'keyboard' | tee -a $TMP_LOG
   loadkeys uk
 
-  echo 'filesystem' | tee -a $LOG
+  echo 'filesystem' | tee -a $TMP_LOG
   partprobe /dev/sda
-  sgdisk --zap-all /dev/sda >> $LOG 2>&1
-  echo -e "n\n\n\n\n\nw\n" | fdisk /dev/sda >> $LOG 2>&1
-  mkfs.ext4 -F /dev/sda1 >> $LOG 2>&1
+  sgdisk --zap-all /dev/sda >> $TMP_LOG 2>&1
+  echo -e "n\n\n\n\n\nw\n" | fdisk /dev/sda >> $TMP_LOG 2>&1
+  mkfs.ext4 -F /dev/sda1 >> $TMP_LOG 2>&1
   mount /dev/sda1 /mnt
   partprobe /dev/sda
 
-  echo 'create log folders'
+  echo 'create log folder' | tee -a $TMP_LOG
   mkdir -p $(dirname $MNT_LOG)
-  mkdir -p $(dirname $MNT_USER_LOG)
+  mv $TMP_LOG $MNT_LOG
 
-  rm -f $MNT_LOG $MNT_USER_LOG
 
   echo 'arch linux base' | tee -a $MNT_LOG
   mkdir -p /mnt/etc/pacman.d
@@ -214,7 +196,9 @@ echo /swapfile none swap defaults 0 0 >> /etc/fstab
 chroot_cmd 'bootloader' "
 $PACMAN grub >> $LOG 2>&1
 grub-install --target=i386-pc --recheck /dev/sda >> $LOG 2>&1
+sed 's/GRUB_CMDLINE_LINUX_DEFAULT=\"\(.*\)\"/GRUB_CMDLINE_LINUX_DEFAULT=\"\1 init=\/usr\/lib\/systemd\/systemd\"/' /etc/default/grub
 grub-mkconfig -o /boot/grub/grub.cfg >> $LOG 2>&1
+pacman -Rs --noconfirm --noprogressbar systemd-sysvcompat >> $LOG 2>&1
 " $BOOTLOADER
 
 chroot_cmd 'network (inc ssh)' "
@@ -227,10 +211,14 @@ systemctl enable dhcpcd@\$nic_name >> $LOG 2>&1
 $PACMAN openssh >> $LOG 2>&1
 " $NETWORK
 
-chroot_cmd 'ssh server' "
+chroot_cmd 'server packages' "
 sed -i 's/#?PermitRootLogin.*/PermitRootLogin no/' /etc/ssh/sshd_config
 systemctl enable sshd >> $LOG 2>&1
-" $SSH_SERVER
+
+$PACMAN lm_sensors
+yes '
+' | sensors-detect
+" $SERVER
 
 # chroot_cmd 'desktop packages' "
 # " $DESKTOP
@@ -246,9 +234,9 @@ echo /etc/sudoers.d/general >> $LOG
 cat /etc/sudoers.d/general >> $LOG 2>&1
 " $ADD_USER
 
-chroot_cmd 'root password' "echo -e '$USERPASS\n$USERPASS\n' | passwd >> $LOG 2>&1" $SET_USERPASS
+chroot_cmd 'root password' "echo -e '$PASSWORD\n$PASSWORD\n' | passwd >> $LOG 2>&1" $SET_PASSWORD
 
-chroot_cmd 'user password' "echo -e '$USERPASS\n$USERPASS\n' | passwd $NEWUSER >> $LOG 2>&1" $SET_USERPASS
+chroot_cmd 'user password' "echo -e '$PASSWORD\n$PASSWORD\n' | passwd $NEWUSER >> $LOG 2>&1" $SET_PASSWORD
 
 # optimised for specific architecture and build times
 chroot_cmd 'aur build flags' "
@@ -310,7 +298,7 @@ chmod 400 .ssh/id_rsa
 ssh-keyscan -H github.com >> .ssh/known_hosts 2>> $LOG
 " $SSH_KEY
 
-chuser_cmd 'create workspace' "mkdir -p $WORKSPACE >> $USER_LOG 2>&1" $CREATE_WORKSPACE
+chuser_cmd 'create workspace' "mkdir -p $WORKSPACE >> $LOG 2>&1" $CREATE_WORKSPACE
 
 aur_cmd 'https://aur.archlinux.org/packages/rb/rbenv/rbenv.tar.gz' $RBENV
 aur_cmd 'https://aur.archlinux.org/packages/ru/ruby-build/ruby-build.tar.gz' $RUBY_BUILD
@@ -319,14 +307,14 @@ aur_cmd 'https://aur.archlinux.org/packages/at/atom-editor/atom-editor.tar.gz' $
 
 chuser_cmd 'dwm' "
 cd $WORKSPACE
-git clone $REPO/dwm.git >> $USER_LOG 2>&1
+git clone $REPO/dwm.git >> $LOG 2>&1
 cd dwm
-make clean install >> $USER_LOG 2>&1
+make clean install >> $LOG 2>&1
 " $XWINDOWS
 
 chuser_cmd 'clone and configure bin' "
 cd ~
-git clone $REPO/bin.git >> $USER_LOG 2>&1
+git clone $REPO/bin.git >> $LOG 2>&1
 echo PASSWORD_DIR=$WORKSPACE/documents >> ~/.pwconfig
 echo PASSWORD_FILE=.passwords.csv >> ~/.pwconfig
 echo EDIT=vim >> ~/.pwconfig
@@ -334,35 +322,35 @@ echo EDIT=vim >> ~/.pwconfig
 
 chuser_cmd 'clone dotfiles' "
 cd $WORKSPACE
-git clone $REPO/dotfiles.git >> $USER_LOG 2>&1
+git clone $REPO/dotfiles.git >> $LOG 2>&1
 cd dotfiles
-bin/sync.sh >> $USER_LOG 2>&1
+bin/sync.sh >> $LOG 2>&1
 " $DOTFILES
 
 chuser_cmd 'vim plugins and theme' "
 mkdir -p ~/.vim/bundle
 cd ~/.vim/bundle
-git clone https://github.com/tpope/vim-pathogen.git >> $USER_LOG 2>&1
-git clone https://github.com/tpope/vim-surround.git >> $USER_LOG 2>&1
-git clone https://github.com/msanders/snipmate.vim.git >> $USER_LOG 2>&1
-git clone https://github.com/scrooloose/nerdtree.git >> $USER_LOG 2>&1
-git clone https://github.com/vim-ruby/vim-ruby.git >> $USER_LOG 2>&1
-git clone https://github.com/tpope/vim-rails.git >> $USER_LOG 2>&1
-git clone https://github.com/tpope/vim-rake.git >> $USER_LOG 2>&1
-git clone https://github.com/tpope/vim-bundler.git >> $USER_LOG 2>&1
-git clone https://github.com/tpope/vim-haml.git >> $USER_LOG 2>&1
-git clone https://github.com/tpope/vim-git.git >> $USER_LOG 2>&1
-git clone https://github.com/tpope/vim-fugitive.git >> $USER_LOG 2>&1
-git clone https://github.com/tpope/vim-markdown.git >> $USER_LOG 2>&1
-git clone https://github.com/tpope/vim-dispatch.git >> $USER_LOG 2>&1
-git clone https://github.com/Keithbsmiley/rspec.vim.git >> $USER_LOG 2>&1
-git clone https://github.com/mileszs/ack.vim.git >> $USER_LOG 2>&1
-git clone https://github.com/bling/vim-airline.git >> $USER_LOG 2>&1
-git clone https://github.com/kien/ctrlp.vim.git >> $USER_LOG 2>&1
+git clone https://github.com/tpope/vim-pathogen.git >> $LOG 2>&1
+git clone https://github.com/tpope/vim-surround.git >> $LOG 2>&1
+git clone https://github.com/msanders/snipmate.vim.git >> $LOG 2>&1
+git clone https://github.com/scrooloose/nerdtree.git >> $LOG 2>&1
+git clone https://github.com/vim-ruby/vim-ruby.git >> $LOG 2>&1
+git clone https://github.com/tpope/vim-rails.git >> $LOG 2>&1
+git clone https://github.com/tpope/vim-rake.git >> $LOG 2>&1
+git clone https://github.com/tpope/vim-bundler.git >> $LOG 2>&1
+git clone https://github.com/tpope/vim-haml.git >> $LOG 2>&1
+git clone https://github.com/tpope/vim-git.git >> $LOG 2>&1
+git clone https://github.com/tpope/vim-fugitive.git >> $LOG 2>&1
+git clone https://github.com/tpope/vim-markdown.git >> $LOG 2>&1
+git clone https://github.com/tpope/vim-dispatch.git >> $LOG 2>&1
+git clone https://github.com/Keithbsmiley/rspec.vim.git >> $LOG 2>&1
+git clone https://github.com/mileszs/ack.vim.git >> $LOG 2>&1
+git clone https://github.com/bling/vim-airline.git >> $LOG 2>&1
+git clone https://github.com/kien/ctrlp.vim.git >> $LOG 2>&1
 
 mkdir -p ~/.vim/colors
 cd ~/.vim/colors
-curl -s -O https://raw.githubusercontent.com/tomasr/molokai/master/colors/molokai.vim >> $USER_LOG 2>&1
+curl -s -O https://raw.githubusercontent.com/tomasr/molokai/master/colors/molokai.vim >> $LOG 2>&1
 
 vim -c 'Helptags | q'
 " $VIM_CONFIG

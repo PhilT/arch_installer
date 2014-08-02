@@ -1,6 +1,6 @@
 # Install and Configure Arch Linux
 
-Simple script to install and configure Arch Linux.
+Simple script to install and configure Arch Linux. Fork for your needs.
 
 ## Assumptions
 
@@ -21,39 +21,20 @@ copy over the SSH keys to be used for the machine:
 
     scp .ssh/id_rsa* root@ipaddress:~
 
-then ssh into the ip address shown and run the bash-curl line:
+then ssh into the ip address shown and run the bash-curl line which will ask you for a hostname and password (used for root and your user):
 
     ssh root@ipaddress
-    bash <(curl -Ls http://goo.gl/tKEBG9)
+    INSTALL=all bash <(curl -Ls http://goo.gl/tKEBG9)
 
+Non-interactive install (handy for testing):
 
-you can preset all options for non-interactive (note passwords are insecure but useful for testing):
+    MACHINE=server PASSWORD=password INSTALL=dryrun bash <(curl -Ls http://goo.gl/tKEBG9)
 
-    MACHINE=server USERPASS=password INSTALL=all REBOOT=true bash <(curl -Ls http://goo.gl/tKEBG9)
+Instead of installing everything omit INSTALL and specify what you want:
 
+    MACHINE=server RBENV=true bash <(curl -Ls http://goo.gl/tKEBG9)
 
-
-## Configurations
-
-
-Detects if using VirtualBox and X and installs guest additions.
-
-### server
-
-Physical machine, currently a VIA C7 1.0Ghz with 1GB RAM.
-
-
-### desktop
-
-VirtualBox VM 10GB RAM
-
-* Installs X and DWM
-
-### laptop
-
-VirtualBox VM 4GB RAM
-
-* Installs X and DWM
+Take a look at the script for all the options.
 
 
 ## Notes
@@ -66,18 +47,14 @@ The only user input is the password taken at the start to ensure the installatio
 
 All other options are specified as env variables.
 
-* `MACHINE` - specify 'server' to ensure X and anything that depends on X is not installed
-* `USERPASS` - Insecure but handy for testing (prompts when none already specified)
-* `INSTALL` -  `all` - selects all options except for `REBOOT`
-               `dryrun` - selects  all options but echos commands to log files instead of executing
-* `REBOOT=` - `true` if you wish to unmount and reboot once the installation is complete
+* `MACHINE` - specify the hostname (and sets some options). Prompts if not specified
+* `PASSWORD` - Insecure but handy for testing (prompts if not specified)
+* `INSTALL` -  `all` - everything except `REBOOT`
+               `dryrun` - does not execute commands (only logs)
+* `REBOOT=` - `true` if you wish to unmount and reboot at the end
 * `OPTION=` - `false` to turn off options
 
-There are 3 log files generated on installation.
-
-* /var/log/install.log - Initial partition creation and formatting
-* /mnt/var/log/install.log - For root commands once partition is available
-* /mnt/home/user/install.log - Non root commands
+Before partition creation all commands and output is sent to `/tmp/install.log`. Once the partition is mounted the log file is moved to `/mnt/home/user/install.log`. On a `dryrun` logging is simply sent to the `~/install.log`.
 
 
 ## Development
@@ -89,6 +66,8 @@ This downloads and runs install.sh on the `dev` branch:
 
 
 ## References
+
+Basically all of https://wiki.archlinux.org! It's an amazing resource!
 
 * https://wiki.archlinux.org/index.php/Installation_Guide
 * https://wiki.archlinux.org/index.php/Beginners'_Guide
