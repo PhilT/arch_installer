@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 #### VERSION ####
-echo 'Arch Install Script Version 0.2.2'
+echo 'Arch Install Script Version 0.2.5'
 echo '================================='
 echo ''
 
@@ -57,6 +57,7 @@ if [[ $INSTALL = all || $INSTALL = dryrun ]]; then
   [[ $CUSTOMIZATION ]] || CUSTOMIZATION=true
   [[ $XWINDOWS ]] || XWINDOWS=true
   [[ $SSH_KEY ]] || SSH_KEY=true
+
   [[ $CREATE_WORKSPACE ]] || CREATE_WORKSPACE=true
   [[ $BIN ]] || BIN=true
   [[ $DOTFILES ]] || DOTFILES=true
@@ -66,7 +67,7 @@ fi
 
 $(lspci | grep -q VirtualBox) || VIRTUALBOX=false
 [[ $MACHINE = 'server' ]] && XWINDOWS=false
-[[ ! $XWINDOW ]] && (ATOM=false; TTF_MS_FONTS=false; VIRTUALBOX=false)
+[[ $XWINDOW != true ]] && (ATOM=false; TTF_MS_FONTS=false; VIRTUALBOX=false)
 
 
 #### FUNCTIONS ####
@@ -105,7 +106,7 @@ chroot_cmd () {
 }
 
 chuser_cmd () {
-  chroot_cmd "$1" "$2" $"3" $NEWUSER
+  chroot_cmd "$1" "$2" "$3" $NEWUSER
 }
 
 # Move to dotfiles
@@ -196,7 +197,7 @@ echo /swapfile none swap defaults 0 0 >> /etc/fstab
 chroot_cmd 'bootloader' "
 $PACMAN grub >> $LOG 2>&1
 grub-install --target=i386-pc --recheck /dev/sda >> $LOG 2>&1
-sed 's/GRUB_CMDLINE_LINUX_DEFAULT=\"\(.*\)\"/GRUB_CMDLINE_LINUX_DEFAULT=\"\1 init=\/usr\/lib\/systemd\/systemd\"/' /etc/default/grub
+sed -i 's/GRUB_CMDLINE_LINUX_DEFAULT=\"\(.*\)\"/GRUB_CMDLINE_LINUX_DEFAULT=\"\1 init=\/usr\/lib\/systemd\/systemd\"/' /etc/default/grub
 grub-mkconfig -o /boot/grub/grub.cfg >> $LOG 2>&1
 pacman -Rs --noconfirm --noprogressbar systemd-sysvcompat >> $LOG 2>&1
 " $BOOTLOADER
@@ -295,7 +296,10 @@ cd /home/$NEWUSER
 cp .ssh/id_rsa.pub .ssh/authorized_keys
 chown -R phil:phil .ssh
 chmod 400 .ssh/id_rsa
-ssh-keyscan -H github.com >> .ssh/known_hosts 2>> $LOG
+" $SSH_KEY
+
+chuser_cmd 'trusted hosts' "
+ssh-keyscan -H github.com > ~/.ssh/known_hosts 2>> $LOG
 " $SSH_KEY
 
 chuser_cmd 'create workspace' "mkdir -p $WORKSPACE >> $LOG 2>&1" $CREATE_WORKSPACE

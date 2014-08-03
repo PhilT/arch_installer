@@ -61,7 +61,13 @@ Before partition creation all commands and output is sent to `/tmp/install.log`.
 
 This downloads and runs install.sh on the `dev` branch:
 
-    bash <(curl -Ls https://raw.githubusercontent.com/PhilT/arch_installer/dev/install.sh)
+    bash <(curl -Ls http://goo.gl/1vmj59)
+
+Login with chroot (after installation but before reboot). Can be useful for checking and further testing of commands:
+
+    arch-chroot /mnt su [username]
+
+Specify username if you want to login as a user instead of root.
 
 
 
