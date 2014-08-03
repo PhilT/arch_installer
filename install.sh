@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 #### VERSION ####
-echo 'Arch Install Script Version 0.2.5'
+echo 'Arch Install Script Version 0.2.6'
 echo '================================='
 echo ''
 
@@ -67,7 +67,7 @@ fi
 
 $(lspci | grep -q VirtualBox) || VIRTUALBOX=false
 [[ $MACHINE = 'server' ]] && XWINDOWS=false
-[[ $XWINDOW != true ]] && (ATOM=false; TTF_MS_FONTS=false; VIRTUALBOX=false)
+[[ $XWINDOWS != true ]] && (ATOM=false; TTF_MS_FONTS=false; VIRTUALBOX=false)
 
 
 #### FUNCTIONS ####
@@ -364,6 +364,5 @@ vim -c 'Helptags | q'
 
 if [[ $REBOOT = true ]]; then
   echo 'rebooting...'
-  umount -R /mnt
-  reboot
+  umount -R /mnt && reboot
 fi
