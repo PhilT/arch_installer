@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 #### VERSION ####
-echo 'Arch Install Script Version 0.2.6'
+echo 'Arch Install Script Version 0.2.7'
 echo '================================='
 echo ''
 
@@ -40,12 +40,13 @@ echo "INSTALL: $INSTALL"
 #### OPTIONS #####
 
 if [[ $INSTALL = all || $INSTALL = dryrun ]]; then
+  [[ $MACHINE = server ]] && SERVER=true
+
   [[ $BASE ]] || BASE=true
   [[ $LOCALE ]] || LOCALE=true
   [[ $SWAPFILE ]] || SWAPFILE=true
   [[ $BOOTLOADER ]] || BOOTLOADER=true
   [[ $NETWORK ]] || NETWORK=true
-  [[ $SERVER ]] || ([[ $MACHINE = server ]] && SERVER=true)
   [[ $ADD_USER ]] || ADD_USER=true
   [[ $STANDARD ]] || STANDARD=true
   [[ $VIRTUALBOX ]] || VIRTUALBOX=true
@@ -66,8 +67,8 @@ if [[ $INSTALL = all || $INSTALL = dryrun ]]; then
 fi
 
 $(lspci | grep -q VirtualBox) || VIRTUALBOX=false
-[[ $MACHINE = 'server' ]] && XWINDOWS=false
-[[ $XWINDOWS != true ]] && (ATOM=false; TTF_MS_FONTS=false; VIRTUALBOX=false)
+[[ $SERVER = true ]] && XWINDOWS=false
+[[ $XWINDOWS != true ]] && ATOM=false TTF_MS_FONTS=false VIRTUALBOX=false
 
 
 #### FUNCTIONS ####
@@ -87,9 +88,9 @@ chroot_cmd () {
 
   if [[ $run = true ]]; then
     echo -e "\n" >> $MNT_LOG
-    echo -e "====================================" >> $MNT_LOG
+    echo -e "/===================================" >> $MNT_LOG
     echo -e "$title" | tee -a $MNT_LOG
-    echo -e "====================================" >> $MNT_LOG
+    echo -e "------------------------------------" >> $MNT_LOG
     if [[ $title =~ 'password' ]]; then
       echo -e "(password command hidden)"
     else
@@ -101,7 +102,7 @@ chroot_cmd () {
       chroot /mnt su $user -c "$cmds"
     fi
 
-    echo -e "------------------------------------" >> $MNT_LOG
+    echo -e "-----------------------------------/" >> $MNT_LOG
   fi
 }
 
