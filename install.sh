@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 #### VERSION ####
-echo 'Arch Install Script Version 0.2.7'
+echo 'Arch Install Script Version 0.2.8'
 echo '================================='
 echo ''
 
@@ -10,6 +10,7 @@ echo ''
 
 [[ $NEWUSER ]] || NEWUSER='phil'
 [[ $WORKSPACE ]] || WORKSPACE='~/ws' # keep it short for window titles
+[[ $DRIVE ]] || DRIVE='sda'
 PACMAN='pacman -S --noconfirm --noprogressbar'
 AUR='pacman -U --noconfirm --noprogressbar'
 REPO='git@github.com:PhilT'
@@ -144,12 +145,12 @@ if [[ $BASE = true && $INSTALL != dryrun ]]; then
   loadkeys uk
 
   echo 'filesystem' | tee -a $TMP_LOG
-  partprobe /dev/sda
-  sgdisk --zap-all /dev/sda >> $TMP_LOG 2>&1
-  echo -e "n\n\n\n\n\nw\n" | fdisk /dev/sda >> $TMP_LOG 2>&1
-  mkfs.ext4 -F /dev/sda1 >> $TMP_LOG 2>&1
-  mount /dev/sda1 /mnt
-  partprobe /dev/sda
+  partprobe /dev/$DRIVE
+  sgdisk --zap-all /dev/$DRIVE >> $TMP_LOG 2>&1
+  echo -e "n\n\n\n\n\nw\n" | fdisk /dev/$DRIVE >> $TMP_LOG 2>&1
+  mkfs.ext4 -F /dev/${DRIVE}1 >> $TMP_LOG 2>&1
+  mount /dev/${DRIVE}1 /mnt
+  partprobe /dev/$DRIVE
 
   echo 'create log folder' | tee -a $TMP_LOG
   mkdir -p $(dirname $MNT_LOG)
@@ -197,7 +198,7 @@ echo /swapfile none swap defaults 0 0 >> /etc/fstab
 
 chroot_cmd 'bootloader' "
 $PACMAN grub >> $LOG 2>&1
-grub-install --target=i386-pc --recheck /dev/sda >> $LOG 2>&1
+grub-install --target=i386-pc --recheck /dev/$DRIVE >> $LOG 2>&1
 sed -i 's/GRUB_CMDLINE_LINUX_DEFAULT=\"\(.*\)\"/GRUB_CMDLINE_LINUX_DEFAULT=\"\1 init=\/usr\/lib\/systemd\/systemd\"/' /etc/default/grub
 grub-mkconfig -o /boot/grub/grub.cfg >> $LOG 2>&1
 pacman -Rs --noconfirm --noprogressbar systemd-sysvcompat >> $LOG 2>&1
@@ -206,8 +207,7 @@ pacman -Rs --noconfirm --noprogressbar systemd-sysvcompat >> $LOG 2>&1
 chroot_cmd 'network (inc ssh)' "
 cp /etc/hosts /etc/hosts.original
 echo $MACHINE > /etc/hostname
-echo 127.0.0.1 localhost.localdomain localhost $MACHINE > /etc/hosts
-echo ::1       localhost.localdomain localhost >> /etc/hosts
+sed -i '/^127.0.0.1/ s/$/ $MACHINE/' /etc/hosts
 nic_name=$(ls /sys/class/net | grep -vm 1 lo)
 systemctl enable dhcpcd@\$nic_name >> $LOG 2>&1
 $PACMAN openssh >> $LOG 2>&1
