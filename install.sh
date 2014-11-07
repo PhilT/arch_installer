@@ -122,7 +122,8 @@ mkdir -p ~/packages
 cd ~/packages
 curl -s $url | tar -zx
 cd $name
-makepkg -s -f --noprogressbar >> $LOG 2>&1
+echo $PASSWORD | sudo -S ls
+makepkg -sf --noprogressbar >> $LOG 2>&1
 " $run
 
   chroot_cmd "install AUR package: $name" "
@@ -225,7 +226,9 @@ yes '
 # chroot_cmd 'desktop packages' "
 # " $DESKTOP
 
-chroot_cmd 'standard packages' "$PACMAN base-devel git vim unison >> $LOG 2>&1" $STANDARD
+chroot_cmd 'standard packages' "
+$PACMAN base-devel git vim unison >> $LOG 2>&1
+" $STANDARD
 
 chroot_cmd 'user' "
 useradd -G wheel -s /bin/bash $NEWUSER >> $LOG 2>&1
@@ -305,16 +308,22 @@ ssh-keyscan -H github.com > ~/.ssh/known_hosts 2>> $LOG
 
 chuser_cmd 'create workspace' "mkdir -p $WORKSPACE >> $LOG 2>&1" $CREATE_WORKSPACE
 
+# Should be able to remove this if sudo in aur_cmd works
+# chroot_cmd 'dependencies for Atom' "
+# $PACMAN --asdeps alsa-lib git gconf gtk2 libatomic_ops libgcrypt libgnome-keyring libnotify libxtst nodejs nss python2
+# " $ATOM
+
 aur_cmd 'https://aur.archlinux.org/packages/rb/rbenv/rbenv.tar.gz' $RBENV
 aur_cmd 'https://aur.archlinux.org/packages/ru/ruby-build/ruby-build.tar.gz' $RUBY_BUILD
 aur_cmd 'https://aur.archlinux.org/packages/tt/ttf-ms-fonts/ttf-ms-fonts.tar.gz' $TTF_MS_FONTS
 aur_cmd 'https://aur.archlinux.org/packages/at/atom-editor/atom-editor.tar.gz' $ATOM
 
 chuser_cmd 'dwm' "
+sudo $PASSWORD | sudo -S $PACMAN libxinerama libxft
 cd $WORKSPACE
 git clone $REPO/dwm.git >> $LOG 2>&1
 cd dwm
-make clean install >> $LOG 2>&1
+echo $PASSWORD | sudo -S make clean install >> $LOG 2>&1
 " $XWINDOWS
 
 chuser_cmd 'clone and configure bin' "
