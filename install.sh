@@ -48,6 +48,7 @@ if [[ $INSTALL = all || $INSTALL = dryrun ]]; then
   [[ $LOCALE ]] || LOCALE=true
   [[ $SWAPFILE ]] || SWAPFILE=true
   [[ $BOOTLOADER ]] || BOOTLOADER=true
+  [[ $UEFI ]] UEFI=true
   [[ $NETWORK ]] || NETWORK=true
   [[ $ADD_USER ]] || ADD_USER=true
   [[ $STANDARD ]] || STANDARD=true
@@ -68,10 +69,11 @@ if [[ $INSTALL = all || $INSTALL = dryrun ]]; then
   [[ $SET_PASSWORD ]] || SET_PASSWORD=true
 fi
 
+# Setup some assumptions based on target machine
 $(lspci | grep -q VirtualBox) || VIRTUALBOX=false
-[[ $SERVER = true ]] && XWINDOWS=false
+[[ $SERVER = true ]] && XWINDOWS=false UEFI=false
 [[ $XWINDOWS != true ]] && ATOM=false TTF_MS_FONTS=false VIRTUALBOX=false
-
+[[ $UEFI = true ]] FDISK=gdisk || FDISK=fdisk
 
 #### FUNCTIONS ####
 
@@ -149,7 +151,7 @@ if [[ $BASE = true && $INSTALL != dryrun ]]; then
   echo 'filesystem' | tee -a $TMP_LOG
   partprobe /dev/$DRIVE
   sgdisk --zap-all /dev/$DRIVE >> $TMP_LOG 2>&1
-  echo -e "n\n\n\n\n\nw\n" | fdisk /dev/$DRIVE >> $TMP_LOG 2>&1
+  echo -e "n\n\n\n\n\nw\n" | $FDISK /dev/$DRIVE >> $TMP_LOG 2>&1
   mkfs.ext4 -F /dev/${DRIVE}1 >> $TMP_LOG 2>&1
   mount /dev/${DRIVE}1 /mnt
   partprobe /dev/$DRIVE
@@ -198,13 +200,35 @@ mkswap /swapfile >> $LOG 2>&1
 echo /swapfile none swap defaults 0 0 >> /etc/fstab
 " $SWAPFILE
 
-chroot_cmd 'bootloader' "
+if [[ $UEFI = true ]]; then
+  chroot_cmd 'bootloader (UEFI)' "
+$PACMAN syslinux efibootmgr >> $LOG 2>&1
+mkdir -p /boot/EFI/syslinux
+cp -r /usr/lib/syslinux/efi64/* /boot/EFI/syslinux
+efibootmgr -c -d /dev/$DRIVE -p 1 -l /EFI/syslinux/syslinux.efi -L \"Syslinux\"
+echo \"PROMPT 0
+TIMEOUT 50
+DEFAULT arch
+
+LABEL arch
+       LINUX ../vmlinuz-linux
+       APPEND root=/dev/${DRIVE}1 rw
+       INITRD ../initramfs-linux.img
+
+LABEL archfallback
+       LINUX ../vmlinuz-linux
+       APPEND root=/dev/${DRIVE}2 rw
+       INITRD ../initramfs-linux-fallback.img\" > /boot/EFI/syslinux/syslinux.cfg
+" $BOOTLOADER
+else
+  chroot_cmd 'bootloader (MBR)' "
 $PACMAN grub >> $LOG 2>&1
 grub-install --target=i386-pc --recheck /dev/$DRIVE >> $LOG 2>&1
 sed -i 's/GRUB_CMDLINE_LINUX_DEFAULT=\"\(.*\)\"/GRUB_CMDLINE_LINUX_DEFAULT=\"\1 init=\/usr\/lib\/systemd\/systemd\"/' /etc/default/grub
 grub-mkconfig -o /boot/grub/grub.cfg >> $LOG 2>&1
 pacman -Rs --noconfirm --noprogressbar systemd-sysvcompat >> $LOG 2>&1
 " $BOOTLOADER
+fi
 
 chroot_cmd 'network (inc ssh)' "
 cp /etc/hosts /etc/hosts.original
