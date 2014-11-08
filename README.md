@@ -1,12 +1,15 @@
 # Install and Configure Arch Linux
 
-Simple script to install and configure Arch Linux. Fork for your needs.
+Simple script to install and configure Arch Linux. Fork for your pleasure.
 
 ## Assumptions
 
-* Drive to install to is assumed to be `sda`
+* Default user created is `Phil`, that's me. Override with env var `NEWUSER`
+* Default workspace folder is `ws`. Override with env var `WORKSPACE`
+* Default drive to install to is `sda`. Override with env var `DRIVE`
+* Default public git repo is my Github account. Override with env var `PUBLIC_GIT`
+* Default private git repo is my Bitbucket account. Override with env var `PRIVATE_GIT`
 * Single network card (name is detected)
-
 
 
 ## Usage

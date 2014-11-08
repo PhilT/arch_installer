@@ -9,15 +9,16 @@ echo ''
 #### VARIABLES ####
 
 [[ $NEWUSER ]] || NEWUSER='phil'
-[[ $WORKSPACE ]] || WORKSPACE='~/ws' # keep it short for window titles
+[[ $WORKSPACE ]] || WORKSPACE='~/ws' # keeping it short for window titles
 [[ $DRIVE ]] || DRIVE='sda'
+[[ $PUBLIC_GIT ]] || PUBLIC_GIT='git@github.com:PhilT'
+[[ $PRIVATE_GIT ]] || PRIVATE_GIT='git@bitbucket.org:philat'
+
 PACMAN='pacman -S --noconfirm --noprogressbar'
 AUR='pacman -U --noconfirm --noprogressbar'
-REPO='git@github.com:PhilT'
 LOG="/home/$NEWUSER/install.log"
 MNT_LOG="/mnt$LOG"
 TMP_LOG="/tmp/install.log"
-
 
 #### USER INPUT ####
 
@@ -321,14 +322,14 @@ aur_cmd 'https://aur.archlinux.org/packages/at/atom-editor/atom-editor.tar.gz' $
 chuser_cmd 'dwm' "
 sudo $PASSWORD | sudo -S $PACMAN libxinerama libxft
 cd $WORKSPACE
-git clone $REPO/dwm.git >> $LOG 2>&1
+git clone $PUBLIC_GIT/dwm.git >> $LOG 2>&1
 cd dwm
 echo $PASSWORD | sudo -S make clean install >> $LOG 2>&1
 " $XWINDOWS
 
 chuser_cmd 'clone and configure bin' "
 cd ~
-git clone $REPO/bin.git >> $LOG 2>&1
+git clone $PUBLIC_GIT/bin.git >> $LOG 2>&1
 echo PASSWORD_DIR=$WORKSPACE/documents >> ~/.pwconfig
 echo PASSWORD_FILE=.passwords.csv >> ~/.pwconfig
 echo EDIT=vim >> ~/.pwconfig
@@ -336,7 +337,7 @@ echo EDIT=vim >> ~/.pwconfig
 
 chuser_cmd 'clone dotfiles' "
 cd $WORKSPACE
-git clone $REPO/dotfiles.git >> $LOG 2>&1
+git clone $PUBLIC_GIT/dotfiles.git >> $LOG 2>&1
 cd dotfiles
 bin/sync.sh >> $LOG 2>&1
 " $DOTFILES
