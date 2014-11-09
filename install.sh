@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 #### VERSION ####
-echo 'Arch Install Script Version 0.2.15'
+echo 'Arch Install Script Version 0.2.16'
 echo '=================================='
 echo ''
 
@@ -78,6 +78,7 @@ fi
 $(lspci | grep -q VirtualBox) || VIRTUALBOX=false
 [[ $SERVER = true ]] && XWINDOWS=false UEFI=false
 [[ $XWINDOWS = false ]] && ATOM=false TTF_MS_FONTS=false VIRTUALBOX=false
+[[ $LAPTOP = true ]] && WIFI=true
 
 #### FUNCTIONS ####
 
@@ -215,14 +216,16 @@ TIMEOUT 50
 DEFAULT arch
 
 LABEL arch
-       LINUX ../vmlinuz-linux
-       APPEND root=/dev/${DRIVE}1 rw
-       INITRD ../initramfs-linux.img
+  LINUX ../vmlinuz-linux
+  APPEND root=/dev/${DRIVE}1 rw
+  APPEND init=/usr/lib/systemd/systemd
+  INITRD ../initramfs-linux.img
 
 LABEL archfallback
-       LINUX ../vmlinuz-linux
-       APPEND root=/dev/${DRIVE}2 rw
-       INITRD ../initramfs-linux-fallback.img\" > /boot/EFI/syslinux/syslinux.cfg
+  LINUX ../vmlinuz-linux
+  APPEND root=/dev/${DRIVE}2 rw
+  APPEND init=/usr/lib/systemd/systemd
+  INITRD ../initramfs-linux-fallback.img\" > /boot/EFI/syslinux/syslinux.cfg
 " $BOOTLOADER
 else
   chroot_cmd 'bootloader (MBR)' "
@@ -243,6 +246,10 @@ systemctl enable dhcpcd@\$nic_name >> $LOG 2>&1
 $PACMAN openssh >> $LOG 2>&1
 " $NETWORK
 
+chroot_cmd 'wifi' "
+$PACMAN wpa_supplicant wpa_actiond
+" $WIFI
+
 chroot_cmd 'server packages' "
 sed -i 's/#?PermitRootLogin.*/PermitRootLogin no/' /etc/ssh/sshd_config
 systemctl enable sshd >> $LOG 2>&1
@@ -253,7 +260,7 @@ yes '
 " $SERVER
 
 chroot_cmd 'standard packages' "
-$PACMAN base-devel git vim unison >> $LOG 2>&1
+$PACMAN base-devel git vim unison dialog >> $LOG 2>&1
 " $STANDARD
 
 chroot_cmd 'user' "
@@ -270,7 +277,7 @@ chroot_cmd 'root password' "echo -e '$PASSWORD\n$PASSWORD\n' | passwd >> $LOG 2>
 chroot_cmd 'user password' "echo -e '$PASSWORD\n$PASSWORD\n' | passwd $NEWUSER >> $LOG 2>&1" $SET_PASSWORD
 
 # optimised for specific architecture and build times
-chroot_cmd 'aur build flags' "
+chroot_cmd 'build flags (AUR)' "
 cp /etc/makepkg.conf /etc/makepkg.conf.original
 sed -i 's/CFLAGS=.*/CFLAGS=\"-march=native -O2 -pipe -fstack-protector-strong --param=ssp-buffer-size=4\"/' /etc/makepkg.conf
 sed -i 's/CXXFLAGS=.*/CXXFLAGS=\"\${CFLAGS}\"/' /etc/makepkg.conf
@@ -334,14 +341,19 @@ ssh-keyscan -H github.com > ~/.ssh/known_hosts 2>> $LOG
 
 chuser_cmd 'create workspace' "mkdir -p $WORKSPACE >> $LOG 2>&1" $CREATE_WORKSPACE
 
-# Should be able to remove this if sudo in aur_cmd works
-# chroot_cmd 'dependencies for Atom' "
-# $PACMAN --asdeps alsa-lib git gconf gtk2 libatomic_ops libgcrypt libgnome-keyring libnotify libxtst nodejs nss python2
-# " $ATOM
+# Currently getting `sudo: no tty present and no askpass program specified` when trying to
+# install dependencies for Atom. The following installs the dependencies first as a
+# workaround for now.
+chroot_cmd 'dependencies for Atom' "
+$PACMAN --asdeps alsa-lib git gconf gtk2 libatomic_ops libgcrypt libgnome-keyring libnotify libxtst nodejs nss python2
+" $ATOM
 
 aur_cmd 'https://aur.archlinux.org/packages/rb/rbenv/rbenv.tar.gz' $RBENV
 aur_cmd 'https://aur.archlinux.org/packages/ru/ruby-build/ruby-build.tar.gz' $RUBY_BUILD
 aur_cmd 'https://aur.archlinux.org/packages/tt/ttf-ms-fonts/ttf-ms-fonts.tar.gz' $TTF_MS_FONTS
+
+
+
 aur_cmd 'https://aur.archlinux.org/packages/at/atom-editor/atom-editor.tar.gz' $ATOM
 
 chuser_cmd 'dwm' "

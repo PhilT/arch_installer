@@ -58,7 +58,8 @@ Install everything except the Vim config:
 the host name.
 
 If you mess something up and need to rerun the installation, simply unmount the drive and
-rerun the install. The existing partition will be removed:
+rerun the install. The existing partition will be removed. The bootloader will get upset,
+however, so once you're done testing it's best to start from scratch:
 
     umount -R /mnt
     MACHINE=server bash <(curl -Ls http://goo.gl/tKEBG9)
@@ -79,6 +80,7 @@ All other options are specified as env variables.
 * `PASSWORD` - Insecure but handy for testing (prompts if not specified)
 * `INSTALL` -  `all` - everything except `REBOOT`
                `dryrun` - does not execute commands (only logs)
+* `LAPTOP`  - Set extra options such as `$WIFI`
 * `REBOOT=` - `true` if you wish to unmount and reboot at the end
 * `OPTION=` - `false` to turn off options
 
