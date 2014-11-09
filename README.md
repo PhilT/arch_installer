@@ -1,14 +1,16 @@
 # Install and Configure Arch Linux
 
-A simple script to install and configure Arch Linux for server, desktop or laptop.
-Fork for your pleasure.
+A simple script to install and configure Arch Linux for server, desktop or laptop. This is
+executable documentation for my setup and probably requires modifying for your needs. It is also
+useful as a reference for how to setup a basic Arch Linux system. Fork for your pleasure.
 
 It's got a few assumptions:
 
-* UEFI is default boot type
+* UEFI GPT and syslinux is the default boot setup (`UEFI=false` for MBR and grub (may change))
+* `phil` (me!) is the default user
+* `ws` is the default ~/workspace
 * Single partition and swap file
-
-
+* You may not want all the VIM plugins I've installed
 
 ## Usage
 
@@ -42,6 +44,10 @@ Non-interactive install (handy for testing):
 Instead of installing everything omit INSTALL and specify what you want:
 
     MACHINE=server RBENV=true bash <(curl -Ls http://goo.gl/tKEBG9)
+
+Install everything except the Vim config:
+
+    MACHINE=desktop INSTALL=all VIM_CONFIG=false bash <(curl -Ls http://goo.gl/tKEBG9)
 
 `MACHINE=server` sets some things like no XWINDOWS and no UEFI. Any other name just sets it as
 the host name. Take a look at the script for all the options and variables.

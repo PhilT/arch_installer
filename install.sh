@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 #### VERSION ####
-echo 'Arch Install Script Version 0.2.10'
+echo 'Arch Install Script Version 0.2.12'
 echo '=================================='
 echo ''
 
@@ -99,15 +99,11 @@ chroot_cmd () {
     echo -e "/===================================" >> $MNT_LOG
     echo -e "$title" | tee -a $MNT_LOG
     echo -e "------------------------------------" >> $MNT_LOG
-    if [[ $title =~ 'password' ]]; then
-      echo -e "(password command hidden)"
-    else
-      echo -e "$cmds" >> $MNT_LOG
-    fi
+    echo -e "$cmds" || sed "s/$PASSWORD/*********/" >> $MNT_LOG
 
     if [[ $INSTALL != dryrun ]]; then
       echo -e "------------------------------------" >> $MNT_LOG
-      chroot /mnt su $user -c "$cmds"
+      chroot /mnt su $user -c "$cmds" >> $MNT_LOG 2>&1
     fi
 
     echo -e "-----------------------------------/" >> $MNT_LOG
@@ -213,7 +209,7 @@ if [[ $UEFI = true ]]; then
 $PACMAN syslinux efibootmgr >> $LOG 2>&1
 mkdir -p /boot/EFI/syslinux
 cp -r /usr/lib/syslinux/efi64/* /boot/EFI/syslinux
-efibootmgr -c -d /dev/$DRIVE -p 1 -l /EFI/syslinux/syslinux.efi -L \"Syslinux\"
+efibootmgr -c -d /dev/$DRIVE -p 1 -l /EFI/syslinux/syslinux.efi -L \"Syslinux\" >> $LOG 2>&1
 echo \"PROMPT 0
 TIMEOUT 50
 DEFAULT arch
@@ -255,9 +251,6 @@ $PACMAN lm_sensors
 yes '
 ' | sensors-detect
 " $SERVER
-
-# chroot_cmd 'desktop packages' "
-# " $DESKTOP
 
 chroot_cmd 'standard packages' "
 $PACMAN base-devel git vim unison >> $LOG 2>&1
@@ -304,7 +297,7 @@ cat /etc/sudoers.d/shutdown >> $LOG 2>&1
 " $CUSTOMIZATION
 
 chroot_cmd 'xwindows packages and applications' "
-$PACMAN xorg-server xorg-server-utils xorg-xinit elementary-icon-theme xcursor-vanilla-dmz gnome-themes-standard ttf-ubuntu-font-family feh lxappearance rxvt-unicode pcmanfm suckless-tools xautolock conky >> $LOG
+$PACMAN xorg-server xorg-server-utils xorg-xinit elementary-icon-theme xcursor-vanilla-dmz gnome-themes-standard ttf-ubuntu-font-family feh lxappearance rxvt-unicode pcmanfm slock xautolock conky >> $LOG
 " $XWINDOWS
 
 chroot_cmd 'virtualbox guest' "
@@ -352,7 +345,7 @@ aur_cmd 'https://aur.archlinux.org/packages/tt/ttf-ms-fonts/ttf-ms-fonts.tar.gz'
 aur_cmd 'https://aur.archlinux.org/packages/at/atom-editor/atom-editor.tar.gz' $ATOM
 
 chuser_cmd 'dwm' "
-sudo $PASSWORD | sudo -S $PACMAN libxinerama libxft
+sudo $PASSWORD | sudo -S $PACMAN libxinerama libxft >> $LOG 2>&1
 cd $WORKSPACE
 git clone $PUBLIC_GIT/dwm.git >> $LOG 2>&1
 cd dwm
@@ -385,7 +378,7 @@ git clone https://github.com/vim-ruby/vim-ruby.git >> $LOG 2>&1
 git clone https://github.com/tpope/vim-rails.git >> $LOG 2>&1
 git clone https://github.com/tpope/vim-rake.git >> $LOG 2>&1
 git clone https://github.com/tpope/vim-bundler.git >> $LOG 2>&1
-git clone https://github.com/tpope/vim-haml.git >> $LOG 2>&1
+git clone https://github.com/slim-template/vim-slim.git >> $LOG 2>&1
 git clone https://github.com/tpope/vim-git.git >> $LOG 2>&1
 git clone https://github.com/tpope/vim-fugitive.git >> $LOG 2>&1
 git clone https://github.com/tpope/vim-markdown.git >> $LOG 2>&1
