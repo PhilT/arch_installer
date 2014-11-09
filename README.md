@@ -5,21 +5,28 @@ It's got a few assumptions. Fork for your pleasure.
 
 ## Usage
 
-Boot an Arch Linux Live CD and run the following commands:
+I need SSH keys for access to my github and bitbucket repos. For testing I have a Windows host
+and VirtualBox VM guest.
+
+Boot an Arch Linux Live CD (https://www.archlinux.org/download/) and run the following commands:
 
     systemctl start sshd
     passwd
     ip a
 
-copy over the SSH keys to be used for the machine:
+On the host, copy over the SSH keys to be used for the machine (I use the host ones for testing):
 
-    scp .ssh/id_rsa* root@ipaddress:~
+    scp ~/.ssh/id_rsa* root@ipaddress:~
 
 then ssh into the ip address shown and run install.sh which will ask you for a hostname and
 password (used for root and your user):
 
     ssh root@ipaddress
     INSTALL=all bash <(curl -Ls http://goo.gl/tKEBG9)
+
+I do it this way round as I don't always have sshd available on the host (Windows machine). Also,
+SSHing into the guest to run the install gives you scrollback on the host (and it's easier to
+copy the command to run or rerun it).
 
 Non-interactive install (handy for testing):
 
@@ -29,8 +36,8 @@ Instead of installing everything omit INSTALL and specify what you want:
 
     MACHINE=server RBENV=true bash <(curl -Ls http://goo.gl/tKEBG9)
 
-Take a look at the script for all the options and variables.
-
+`MACHINE=server` sets some things like no XWINDOWS and no UEFI. Any other name just sets it as
+the host name. Take a look at the script for all the options and variables.
 
 ## Notes
 
