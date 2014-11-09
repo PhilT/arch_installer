@@ -1,7 +1,14 @@
 # Install and Configure Arch Linux
 
 A simple script to install and configure Arch Linux for server, desktop or laptop.
-It's got a few assumptions. Fork for your pleasure.
+Fork for your pleasure.
+
+It's got a few assumptions:
+
+* UEFI is default boot type
+* Single partition and swap file
+
+
 
 ## Usage
 
@@ -43,8 +50,6 @@ the host name. Take a look at the script for all the options and variables.
 
 System-wide configuration files that will be modified by this script are first copied to a
 file with the extension .original (e.g. /etc/pacman.conf.original).
-
-The file system is setup with a single partition and swap file.
 
 The only user input is the password taken at the start to ensure the installation can complete
 unattended. Both root and user are set with the same password (you may want to change this).

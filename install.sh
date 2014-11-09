@@ -1,10 +1,15 @@
 #!/usr/bin/env bash
 
 #### VERSION ####
-echo 'Arch Install Script Version 0.2.9'
-echo '================================='
+echo 'Arch Install Script Version 0.2.10'
+echo '=================================='
 echo ''
 
+#### ABORT if interupted
+control_c() {
+  exit 1
+}
+trap control_c SIGINT
 
 #### VARIABLES ####
 
@@ -73,7 +78,6 @@ fi
 $(lspci | grep -q VirtualBox) || VIRTUALBOX=false
 [[ $SERVER = true ]] && XWINDOWS=false UEFI=false
 [[ $XWINDOWS != true ]] && ATOM=false TTF_MS_FONTS=false VIRTUALBOX=false
-[[ $UEFI = true ]] && FDISK=gdisk || FDISK=fdisk
 
 #### FUNCTIONS ####
 
@@ -151,7 +155,11 @@ if [[ $BASE = true && $INSTALL != dryrun ]]; then
   echo 'filesystem' | tee -a $TMP_LOG
   partprobe /dev/$DRIVE
   sgdisk --zap-all /dev/$DRIVE >> $TMP_LOG 2>&1
-  echo -e "n\n\n\n\n\nw\n" | $FDISK /dev/$DRIVE >> $TMP_LOG 2>&1
+  if [[ $UEFI = true ]]; then
+    sgdisk --new=0:0:0 /dev/$DRIVE >> $TMP_LOG 2>&1
+  else
+    echo ,,,\* | sfdisk /dev/$DRIVE
+  fi
   mkfs.ext4 -F /dev/${DRIVE}1 >> $TMP_LOG 2>&1
   mount /dev/${DRIVE}1 /mnt
   partprobe /dev/$DRIVE
