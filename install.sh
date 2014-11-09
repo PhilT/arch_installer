@@ -48,7 +48,7 @@ if [[ $INSTALL = all || $INSTALL = dryrun ]]; then
   [[ $LOCALE ]] || LOCALE=true
   [[ $SWAPFILE ]] || SWAPFILE=true
   [[ $BOOTLOADER ]] || BOOTLOADER=true
-  [[ $UEFI ]] UEFI=true
+  [[ $UEFI ]] || UEFI=true
   [[ $NETWORK ]] || NETWORK=true
   [[ $ADD_USER ]] || ADD_USER=true
   [[ $STANDARD ]] || STANDARD=true
