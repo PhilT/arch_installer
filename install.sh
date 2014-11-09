@@ -73,7 +73,7 @@ fi
 $(lspci | grep -q VirtualBox) || VIRTUALBOX=false
 [[ $SERVER = true ]] && XWINDOWS=false UEFI=false
 [[ $XWINDOWS != true ]] && ATOM=false TTF_MS_FONTS=false VIRTUALBOX=false
-[[ $UEFI = true ]] FDISK=gdisk || FDISK=fdisk
+[[ $UEFI = true ]] && FDISK=gdisk || FDISK=fdisk
 
 #### FUNCTIONS ####
 
