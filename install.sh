@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 #### VERSION ####
-echo 'Arch Install Script Version 0.2.12'
+echo 'Arch Install Script Version 0.2.13'
 echo '=================================='
 echo ''
 
@@ -99,7 +99,7 @@ chroot_cmd () {
     echo -e "/===================================" >> $MNT_LOG
     echo -e "$title" | tee -a $MNT_LOG
     echo -e "------------------------------------" >> $MNT_LOG
-    echo -e "$cmds" || sed "s/$PASSWORD/*********/" >> $MNT_LOG
+    echo -e "$cmds" | sed "s/$PASSWORD/*********/" >> $MNT_LOG
 
     if [[ $INSTALL != dryrun ]]; then
       echo -e "------------------------------------" >> $MNT_LOG
