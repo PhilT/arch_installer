@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 #### VERSION ####
-echo 'Arch Install Script Version 0.2.13'
+echo 'Arch Install Script Version 0.2.14'
 echo '=================================='
 echo ''
 
@@ -77,7 +77,7 @@ fi
 # Setup some assumptions based on target machine
 $(lspci | grep -q VirtualBox) || VIRTUALBOX=false
 [[ $SERVER = true ]] && XWINDOWS=false UEFI=false
-[[ $XWINDOWS != true ]] && ATOM=false TTF_MS_FONTS=false VIRTUALBOX=false
+[[ $XWINDOWS = false ]] && ATOM=false TTF_MS_FONTS=false VIRTUALBOX=false
 
 #### FUNCTIONS ####
 

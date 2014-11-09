@@ -1,16 +1,21 @@
 # Install and Configure Arch Linux
 
-A simple script to install and configure Arch Linux for server, desktop or laptop. This is
-executable documentation for my setup and probably requires modifying for your needs. It is also
-useful as a reference for how to setup a basic Arch Linux system. Fork for your pleasure.
+A script to install and configure Arch Linux for server, desktop or laptop. This is
+executable documentation for my setup and probably requires modifying for your needs. It also
+serves as a useful reference for how to setup a basic Arch Linux system. Fork for your pleasure.
 
 It's got a few assumptions:
 
+* WARNING!!!! Existing partitions will be deleted
 * UEFI GPT and syslinux is the default boot setup (`UEFI=false` for MBR and grub (may change))
 * `phil` (me!) is the default user
 * `ws` is the default ~/workspace
 * Single partition and swap file
 * You may not want all the VIM plugins I've installed
+* X is installed except when `MACHINE=server`
+* VirtualBox guest utils installed when running on a VM
+* Various packages are installed (especially when installing X). This may not be to your liking.
+
 
 ## Usage
 
@@ -27,8 +32,8 @@ On the host, copy over the SSH keys to be used for the machine (I use the host o
 
     scp ~/.ssh/id_rsa* root@ipaddress:~
 
-then ssh into the ip address shown and run install.sh which will ask you for a hostname and
-password (used for root and your user):
+then ssh into the ip address shown and run install.sh (http://goo.gl/tKEBG9 points to my github
+repo) which will ask you for a hostname and password (used for root and your user):
 
     ssh root@ipaddress
     INSTALL=all bash <(curl -Ls http://goo.gl/tKEBG9)
@@ -50,7 +55,15 @@ Install everything except the Vim config:
     MACHINE=desktop INSTALL=all VIM_CONFIG=false bash <(curl -Ls http://goo.gl/tKEBG9)
 
 `MACHINE=server` sets some things like no XWINDOWS and no UEFI. Any other name just sets it as
-the host name. Take a look at the script for all the options and variables.
+the host name.
+
+If you mess something up and need to rerun the installation, simply unmount the drive and
+rerun the install. The existing partition will be removed:
+
+    umount -R /mnt
+    MACHINE=server bash <(curl -Ls http://goo.gl/tKEBG9)
+
+Take a look at the script for all the options and variables.
 
 ## Notes
 
@@ -72,6 +85,11 @@ All other options are specified as env variables.
 Before partition creation all commands and output is sent to `/tmp/install.log`. Once the
 partition is mounted the log file is moved to `/mnt/home/user/install.log`. On a `dryrun`
 logging is simply sent to the `~/install.log`.
+
+While running the install script open another terminal and ssh in then tail both files.
+Change `phil` to what you specified for `NEWUSER`:
+
+    tail -f /tmp/install.log /mnt/home/phil/install.log
 
 
 ## Development
