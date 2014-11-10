@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 #### VERSION ####
-echo 'Arch Install Script Version 0.2.18'
+echo 'Arch Install Script Version 0.2.19'
 echo '=================================='
 echo ''
 
@@ -62,13 +62,14 @@ if [[ $INSTALL = all || $INSTALL = dryrun ]]; then
   [[ $AUR_FLAGS ]] || AUR_FLAGS=true
   [[ $RBENV ]] || RBENV=true
   [[ $RUBY_BUILD ]] || RUBY_BUILD=true
-  [[ $ATOM ]] || ATOM=true
-  [[ $TTF_MS_FONTS ]] || TTF_MS_FONTS=true
   [[ $CUSTOMIZATION ]] || CUSTOMIZATION=true
   [[ $XWINDOWS ]] || XWINDOWS=true
+  [[ $INFINALITY ]] || XWINDOWS=true
+  [[ $TTF_MS_FONTS ]] || TTF_MS_FONTS=true
+  [[ $ATOM ]] || ATOM=true
   [[ $SSH_KEY ]] || SSH_KEY=true
-
   [[ $CREATE_WORKSPACE ]] || CREATE_WORKSPACE=true
+  [[ $DWM ]] || DWM=true
   [[ $BIN ]] || BIN=true
   [[ $DOTFILES ]] || DOTFILES=true
   [[ $VIM_CONFIG ]] || VIM_CONFIG=true
@@ -78,8 +79,9 @@ fi
 # Setup some assumptions based on target machine
 $(lspci | grep -q VirtualBox) || IN_VM=false
 [[ $SERVER = true ]] && XWINDOWS=false UEFI=false INTEL=false
-[[ $XWINDOWS = false ]] && ATOM=false TTF_MS_FONTS=false IN_VM=false
+[[ $XWINDOWS = false ]] && ATOM=false TTF_MS_FONTS=false IN_VM=false INFINALITY=false DWM=false
 [[ $LAPTOP = true ]] && WIFI=true
+[[ $DWM = true || $DOTFILES = true ]] && CREATE_WORKSPACE=true
 
 #### FUNCTIONS ####
 
@@ -169,7 +171,7 @@ fi
 
 api_fs_mount /mnt || echo 'api_fs_mount failed' >> $MNT_LOG
 track_mount /etc/resolv.conf /mnt/etc/resolv.conf --bind
-
+chroot_cmd 'setup /dev/null' "[[ -c /dev/null ]] || mknod -m 777 /dev/null c 1 3" true
 
 #### ROOT SETUP ####
 
@@ -192,7 +194,7 @@ mkswap /swapfile >> $LOG 2>&1
 echo /swapfile none swap defaults 0 0 >> /etc/fstab
 " $SWAPFILE
 
-BOOTLOADER_PACKAGES=syslinux
+BOOTLOADER_PACKAGES='syslinux'
 
 if [[ $INTEL = true ]]; then
   BOOTLOADER_PACKAGES="$BOOTLOADER_PACKAGES intel-ucode"
@@ -203,14 +205,14 @@ fi
 
 if [[ $UEFI = true ]]; then
   BOOTLOADER_PACKAGES="$BOOTLOADER_PACKAGES efibootmgr"
-  SYSLINUX_CONFIG=/boot/EFI/syslinux/syslinux.cfg
+  SYSLINUX_CONFIG='/boot/EFI/syslinux/syslinux.cfg'
   BOOTLOADER_EXTRA="mkdir -p /boot/EFI/syslinux
-  cp -r /usr/lib/syslinux/efi64/* /boot/EFI/syslinux
-  efibootmgr -c -d /dev/$DRIVE -p 1 -l /EFI/syslinux/syslinux.efi -L \"Syslinux\" >> $LOG 2>&1
-  "
+cp -r /usr/lib/syslinux/efi64/* /boot/EFI/syslinux
+efibootmgr -c -d /dev/$DRIVE -p 1 -l /EFI/syslinux/syslinux.efi -L \"Syslinux\" >> $LOG 2>&1
+"
 else
   BOOTLOADER_EXTRA=''
-  SYSLINUX_CONFIG=/boot/syslinux/syslinux.cfg
+  SYSLINUX_CONFIG='/boot/syslinux/syslinux.cfg'
 fi
 
 chroot_cmd 'bootloader' "
@@ -243,14 +245,14 @@ $PACMAN openssh >> $LOG 2>&1
 " $NETWORK
 
 chroot_cmd 'wifi' "
-$PACMAN wpa_supplicant wpa_actiond
+$PACMAN wpa_supplicant wpa_actiond >> $LOG 2>&1
 " $WIFI
 
 chroot_cmd 'server packages' "
 sed -i 's/#?PermitRootLogin.*/PermitRootLogin no/' /etc/ssh/sshd_config
 systemctl enable sshd >> $LOG 2>&1
 
-$PACMAN lm_sensors
+$PACMAN lm_sensors >> $LOG 2>&1
 yes '
 ' | sensors-detect
 " $SERVER
@@ -291,8 +293,20 @@ chmod 440 /etc/sudoers.d/shutdown >> $LOG 2>&1
 " $CUSTOMIZATION
 
 chroot_cmd 'xwindows packages and applications' "
-$PACMAN xorg-server xorg-server-utils xorg-xinit elementary-icon-theme xcursor-vanilla-dmz gnome-themes-standard ttf-ubuntu-font-family feh lxappearance rxvt-unicode pcmanfm slock xautolock conky >> $LOG
+$PACMAN xorg-server xorg-server-utils xorg-xinit >> $LOG 2>&1
+$PACMAN conky elementary-icon-theme feh gnome-themes-standard lxappearance pcmanfm >> $LOG 2>&1
+$PACMAN rxvt-unicode slock ttf-ubuntu-font-family xautolock xcursor-vanilla-dmz >> $LOG 2>&1
+cd /etc/fonts/conf.d
+ln -s ../conf.avail/10-sub-pixel-rgb.conf
 " $XWINDOWS
+
+chroot_cmd 'Infinality bundle fonts' "
+echo '[infinality-bundle-fonts]
+Server = http://bohoomil.com/repo/fonts' >> /etc/pacman.conf
+pacman-key -r 962DDE58 >> $LOG 2>&1
+pacman-key -f 962DDE58 >> $LOG 2>&1
+pacman-key --lsign-key 962DDE58 >> $LOG 2>&1
+" $INFINALITY
 
 chroot_cmd 'virtualbox guest' "
 $PACMAN virtualbox-guest-utils virtualbox-guest-dkms >> $LOG 2>&1
@@ -324,11 +338,10 @@ chuser_cmd 'trusted hosts' "
 ssh-keyscan -H github.com > ~/.ssh/known_hosts 2>> $LOG
 " $SSH_KEY
 
-chuser_cmd 'create workspace' "mkdir -p $WORKSPACE >> $LOG 2>&1" $CREATE_WORKSPACE
+chuser_cmd 'create workspace' "
+mkdir -p $WORKSPACE >> $LOG 2>&1
+" $CREATE_WORKSPACE
 
-# Currently getting `sudo: no tty present and no askpass program specified` when trying to
-# install dependencies for Atom. The following installs the dependencies first as a
-# workaround for now.
 chroot_cmd 'dependencies for Atom' "
 $PACMAN --asdeps alsa-lib git gconf gtk2 libatomic_ops libgcrypt libgnome-keyring libnotify libxtst nodejs nss python2
 " $ATOM
@@ -344,7 +357,7 @@ cd $WORKSPACE
 git clone $PUBLIC_GIT/dwm.git >> $LOG 2>&1
 cd dwm
 echo $PASSWORD | sudo -S make clean install >> $LOG 2>&1
-" $XWINDOWS
+" $DWM
 
 chuser_cmd 'clone and configure bin' "
 cd ~
