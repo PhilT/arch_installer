@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 #### VERSION ####
-echo 'Arch Install Script Version 0.2.17'
+echo 'Arch Install Script Version 0.2.18'
 echo '=================================='
 echo ''
 
@@ -84,9 +84,6 @@ $(lspci | grep -q VirtualBox) || IN_VM=false
 #### FUNCTIONS ####
 
 # pull out functions from arch-root and include them
-# A newer version of Arch in development has moved the
-# functions into a common script that can be included
-# instead. So extracting them will no longer be needed.
 sed '/^usage\(\).*/,/^SHELL=.*/d' /usr/bin/arch-chroot > ~/chroot-common
 source ~/chroot-common
 
@@ -97,8 +94,8 @@ chroot_cmd () {
   user="$4"
 
   if [[ $run = true ]]; then
-    echo -e "\n\n\n\n\n" >> $MNT_LOG
-    echo -e "########## $title ##########" | tee -a $MNT_LOG
+    echo -e "\n\n\n\n\n########## $title ##########" >> $MNT_LOG
+    echo -e $title
     echo -e "$cmds" | sed "s/$PASSWORD/*********/" >> $MNT_LOG
 
     if [[ $INSTALL != dryrun ]]; then

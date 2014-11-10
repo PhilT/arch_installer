@@ -17,11 +17,19 @@ It's got a few assumptions:
 * X is installed except when `MACHINE=server`
 * VirtualBox guest utils installed when running on a VM
 * Various packages are installed (especially when installing X). This may not be to your liking.
-* English Language and UK keyboard
+* English Language and UK keyboard, UK mirrorlist
 
 Everything is installed via chroot so no reboot is done until the end (and it's
 an optional step should you prefer to check the installation before booting into
 Arch for the first time).
+
+
+## Motives
+
+* I like to have executable, repeatable documentation of everything I do
+* I'm always (re)installing new or old machines and tinkering (read: breaking)
+* I like to have a setup I can replicate across my machines
+* I find it's a great way to learn
 
 
 ## Usage
@@ -73,6 +81,7 @@ however, so once you're done testing it's best to start from scratch:
 
 Take a look at the script for all the options and variables.
 
+
 ## Notes
 
 System-wide configuration files that will be modified by this script are first copied to a
@@ -100,6 +109,10 @@ Change `phil` to what you specified for `NEWUSER`:
 
     tail -f /tmp/install.log /mnt/home/phil/install.log
 
+Or afterwards:
+
+    less /mnt/home/phil/install.log
+
 
 ## Development
 
@@ -112,7 +125,6 @@ Login with chroot (after installation but before reboot). Useful for further tes
     arch-chroot /mnt su [username]
 
 Specify username if you want to login as a user instead of root.
-
 
 
 ## References
