@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 #### VERSION ####
-echo 'Arch Install Script Version 0.2.19'
+echo 'Arch Install Script Version 0.2.20'
 echo '=================================='
 echo ''
 
@@ -306,6 +306,7 @@ Server = http://bohoomil.com/repo/fonts' >> /etc/pacman.conf
 pacman-key -r 962DDE58 >> $LOG 2>&1
 pacman-key -f 962DDE58 >> $LOG 2>&1
 pacman-key --lsign-key 962DDE58 >> $LOG 2>&1
+$PACMAN ibfonts-meta-base >> $LOG 2>&1
 " $INFINALITY
 
 chroot_cmd 'virtualbox guest' "
