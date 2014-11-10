@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 #### VERSION ####
-echo 'Arch Install Script Version 0.2.20'
+echo 'Arch Install Script Version 0.2.21'
 echo '=================================='
 echo ''
 
@@ -301,12 +301,19 @@ ln -s ../conf.avail/10-sub-pixel-rgb.conf
 " $XWINDOWS
 
 chroot_cmd 'Infinality bundle fonts' "
-echo '[infinality-bundle-fonts]
-Server = http://bohoomil.com/repo/fonts' >> /etc/pacman.conf
-pacman-key -r 962DDE58 >> $LOG 2>&1
-pacman-key -f 962DDE58 >> $LOG 2>&1
-pacman-key --lsign-key 962DDE58 >> $LOG 2>&1
-$PACMAN ibfonts-meta-base >> $LOG 2>&1
+if [[ $(grep -qv infinality-bundle /etc/pacman.conf) ]]; then
+  echo '[infinality-bundle]
+  Server = http://bohoomil.com/repo/\$arch
+  [infinality-bundle-multilib]
+  Server = http://bohoomil.com/repo/multilib/\$arch
+  [infinality-bundle-fonts]
+  Server = http://bohoomil.com/repo/fonts' >> /etc/pacman.conf
+  pacman-key -r 962DDE58 >> $LOG 2>&1
+  pacman-key -f 962DDE58 >> $LOG 2>&1
+  pacman-key --lsign-key 962DDE58 >> $LOG 2>&1
+  pacman -Syyu >> $LOG 2>&1
+  $PACMAN ibfonts-meta-base >> $LOG 2>&1
+fi
 " $INFINALITY
 
 chroot_cmd 'virtualbox guest' "
