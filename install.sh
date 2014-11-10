@@ -52,12 +52,13 @@ if [[ $INSTALL = all || $INSTALL = dryrun ]]; then
   [[ $BASE ]] || BASE=true
   [[ $LOCALE ]] || LOCALE=true
   [[ $SWAPFILE ]] || SWAPFILE=true
+  [[ $INTEL ]] || INTEL=true
   [[ $BOOTLOADER ]] || BOOTLOADER=true
   [[ $UEFI ]] || UEFI=true
   [[ $NETWORK ]] || NETWORK=true
   [[ $ADD_USER ]] || ADD_USER=true
   [[ $STANDARD ]] || STANDARD=true
-  [[ $VIRTUALBOX ]] || VIRTUALBOX=true
+  [[ $IN_VM ]] || IN_VM=true
   [[ $AUR_FLAGS ]] || AUR_FLAGS=true
   [[ $RBENV ]] || RBENV=true
   [[ $RUBY_BUILD ]] || RUBY_BUILD=true
@@ -75,9 +76,9 @@ if [[ $INSTALL = all || $INSTALL = dryrun ]]; then
 fi
 
 # Setup some assumptions based on target machine
-$(lspci | grep -q VirtualBox) || VIRTUALBOX=false
-[[ $SERVER = true ]] && XWINDOWS=false UEFI=false
-[[ $XWINDOWS = false ]] && ATOM=false TTF_MS_FONTS=false VIRTUALBOX=false
+$(lspci | grep -q VirtualBox) || IN_VM=false
+[[ $SERVER = true ]] && XWINDOWS=false UEFI=false INTEL=false
+[[ $XWINDOWS = false ]] && ATOM=false TTF_MS_FONTS=false IN_VM=false
 [[ $LAPTOP = true ]] && WIFI=true
 
 #### FUNCTIONS ####
@@ -96,18 +97,13 @@ chroot_cmd () {
   user="$4"
 
   if [[ $run = true ]]; then
-    echo -e "\n" >> $MNT_LOG
-    echo -e "/===================================" >> $MNT_LOG
-    echo -e "$title" | tee -a $MNT_LOG
-    echo -e "------------------------------------" >> $MNT_LOG
+    echo -e "\n\n\n\n\n" >> $MNT_LOG
+    echo -e "########## $title ##########" | tee -a $MNT_LOG
     echo -e "$cmds" | sed "s/$PASSWORD/*********/" >> $MNT_LOG
 
     if [[ $INSTALL != dryrun ]]; then
-      echo -e "------------------------------------" >> $MNT_LOG
       LANG=C chroot /mnt su $user -c "$cmds" >> $MNT_LOG 2>&1
     fi
-
-    echo -e "-----------------------------------/" >> $MNT_LOG
   fi
 }
 
@@ -126,8 +122,7 @@ mkdir -p ~/packages
 cd ~/packages
 curl -s $url | tar -zx
 cd $name
-echo $PASSWORD | sudo -S ls
-makepkg -sf --noprogressbar >> $LOG 2>&1
+makepkg -cf --noprogressbar >> $LOG 2>&1
 " $run
 
   chroot_cmd "install AUR package: $name" "
@@ -152,11 +147,7 @@ if [[ $BASE = true && $INSTALL != dryrun ]]; then
   echo 'filesystem' | tee -a $TMP_LOG
   partprobe /dev/$DRIVE
   sgdisk --zap-all /dev/$DRIVE >> $TMP_LOG 2>&1
-  if [[ $UEFI = true ]]; then
-    sgdisk --new=0:0:0 /dev/$DRIVE >> $TMP_LOG 2>&1
-  else
-    echo ,,,\* | sfdisk /dev/$DRIVE
-  fi
+  sgdisk --new=0:0:0 /dev/$DRIVE >> $TMP_LOG 2>&1
   mkfs.ext4 -F /dev/${DRIVE}1 >> $TMP_LOG 2>&1
   mount /dev/${DRIVE}1 /mnt
   partprobe /dev/$DRIVE
@@ -185,7 +176,6 @@ track_mount /etc/resolv.conf /mnt/etc/resolv.conf --bind
 
 #### ROOT SETUP ####
 
-
 chroot_cmd 'time, locale, keyboard' "
 ln -s /usr/share/zoneinfo/GB /etc/localtime >> $LOG 2>&1
 sed -i s/#en_GB.UTF-8/en_GB.UTF-8/ /etc/locale.gen
@@ -205,12 +195,30 @@ mkswap /swapfile >> $LOG 2>&1
 echo /swapfile none swap defaults 0 0 >> /etc/fstab
 " $SWAPFILE
 
+BOOTLOADER_PACKAGES=syslinux
+
+if [[ $INTEL = true ]]; then
+  BOOTLOADER_PACKAGES="$BOOTLOADER_PACKAGES intel-ucode"
+  INITRD='../intel-ucode.img ../initramfs-linux.img'
+else
+  INITRD='../initramfs-linux.img'
+fi
+
 if [[ $UEFI = true ]]; then
-  chroot_cmd 'bootloader (UEFI)' "
-$PACMAN syslinux efibootmgr >> $LOG 2>&1
-mkdir -p /boot/EFI/syslinux
-cp -r /usr/lib/syslinux/efi64/* /boot/EFI/syslinux
-efibootmgr -c -d /dev/$DRIVE -p 1 -l /EFI/syslinux/syslinux.efi -L \"Syslinux\" >> $LOG 2>&1
+  BOOTLOADER_PACKAGES="$BOOTLOADER_PACKAGES efibootmgr"
+  SYSLINUX_CONFIG=/boot/EFI/syslinux/syslinux.cfg
+  BOOTLOADER_EXTRA="mkdir -p /boot/EFI/syslinux
+  cp -r /usr/lib/syslinux/efi64/* /boot/EFI/syslinux
+  efibootmgr -c -d /dev/$DRIVE -p 1 -l /EFI/syslinux/syslinux.efi -L \"Syslinux\" >> $LOG 2>&1
+  "
+else
+  BOOTLOADER_EXTRA=''
+  SYSLINUX_CONFIG=/boot/syslinux/syslinux.cfg
+fi
+
+chroot_cmd 'bootloader' "
+$PACMAN $BOOTLOADER_PACKAGES >> $LOG 2>&1
+$BOOTLOADER_EXTRA
 echo \"PROMPT 0
 TIMEOUT 50
 DEFAULT arch
@@ -219,23 +227,14 @@ LABEL arch
   LINUX ../vmlinuz-linux
   APPEND root=/dev/${DRIVE}1 rw
   APPEND init=/usr/lib/systemd/systemd
-  INITRD ../initramfs-linux.img
+  INITRD $INITRD
 
 LABEL archfallback
   LINUX ../vmlinuz-linux
   APPEND root=/dev/${DRIVE}2 rw
   APPEND init=/usr/lib/systemd/systemd
-  INITRD ../initramfs-linux-fallback.img\" > /boot/EFI/syslinux/syslinux.cfg
+  INITRD $INITRD\" > $SYSLINUX_CONFIG
 " $BOOTLOADER
-else
-  chroot_cmd 'bootloader (MBR)' "
-$PACMAN grub >> $LOG 2>&1
-grub-install --target=i386-pc --recheck /dev/$DRIVE >> $LOG 2>&1
-sed -i 's/GRUB_CMDLINE_LINUX_DEFAULT=\"\(.*\)\"/GRUB_CMDLINE_LINUX_DEFAULT=\"\1 init=\/usr\/lib\/systemd\/systemd\"/' /etc/default/grub
-grub-mkconfig -o /boot/grub/grub.cfg >> $LOG 2>&1
-pacman -Rs --noconfirm --noprogressbar systemd-sysvcompat >> $LOG 2>&1
-" $BOOTLOADER
-fi
 
 chroot_cmd 'network (inc ssh)' "
 cp /etc/hosts /etc/hosts.original
@@ -273,7 +272,6 @@ cat /etc/sudoers.d/general >> $LOG 2>&1
 " $ADD_USER
 
 chroot_cmd 'root password' "echo -e '$PASSWORD\n$PASSWORD\n' | passwd >> $LOG 2>&1" $SET_PASSWORD
-
 chroot_cmd 'user password' "echo -e '$PASSWORD\n$PASSWORD\n' | passwd $NEWUSER >> $LOG 2>&1" $SET_PASSWORD
 
 # optimised for specific architecture and build times
@@ -285,12 +283,6 @@ sed -i 's/.*MAKEFLAGS=.*/MAKEFLAGS=\"-j`nproc`\"/' /etc/makepkg.conf
 sed -i s/#BUILDDIR=/BUILDDIR=/ /etc/makepkg.conf
 sed -i 's/#PKGDEST=.*/PKGDEST=\/tmp/' /etc/makepkg.conf
 sed -i s/.*PKGEXT=.*/PKGEXT='.pkg.tar'/ /etc/makepkg.conf
-grep '^CFLAGS' /etc/makepkg.conf >> $LOG 2>&1
-grep '^CXXFLAGS' /etc/makepkg.conf >> $LOG 2>&1
-grep '^MAKEFLAGS' /etc/makepkg.conf >> $LOG 2>&1
-grep '^BUILDDIR' /etc/makepkg.conf >> $LOG 2>&1
-grep '^PKGDEST' /etc/makepkg.conf >> $LOG 2>&1
-grep '^PKGEXT' /etc/makepkg.conf >> $LOG 2>&1
 " $AUR_FLAGS
 
 chroot_cmd 'pacman & sudoer customization' "
@@ -299,8 +291,6 @@ sed -i s/#Color/Color/ /etc/pacman.conf
 echo '$NEWUSER ALL=NOPASSWD:/sbin/shutdown' >> /etc/sudoers.d/shutdown
 echo '$NEWUSER ALL=NOPASSWD:/sbin/reboot' >> /etc/sudoers.d/shutdown
 chmod 440 /etc/sudoers.d/shutdown >> $LOG 2>&1
-echo /etc/sudoers.d/shutdown >> $LOG
-cat /etc/sudoers.d/shutdown >> $LOG 2>&1
 " $CUSTOMIZATION
 
 chroot_cmd 'xwindows packages and applications' "
@@ -313,9 +303,7 @@ echo vboxguest >> /etc/modules-load.d/virtualbox.conf
 echo vboxsf >> /etc/modules-load.d/virtualbox.conf
 echo vboxvideo >> /etc/modules-load.d/virtualbox.conf
 systemctl enable vboxservice >> $LOG 2>&1
-echo /etc/modules-load.d/virtualbox.conf >> $LOG 2>&1
-cat /etc/modules-load.d/virtualbox.conf >> $LOG 2>&1
-" $VIRTUALBOX
+" $IN_VM
 
 
 #### USER SETUP ####

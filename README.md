@@ -6,8 +6,10 @@ serves as a useful reference for how to setup a basic Arch Linux system. Fork fo
 
 It's got a few assumptions:
 
-* WARNING!!!! Existing partitions will be deleted
-* UEFI GPT and syslinux is the default boot setup (`UEFI=false` for MBR and grub (may change))
+* WARNING - Existing partitions will be deleted
+* GPT is the default partition type
+* syslinux is the default bootloader
+* UEFI is enabled by default (`UEFI=false` to disable)
 * `phil` (me!) is the default user
 * `ws` is the default ~/workspace
 * Single partition and swap file
@@ -15,6 +17,11 @@ It's got a few assumptions:
 * X is installed except when `MACHINE=server`
 * VirtualBox guest utils installed when running on a VM
 * Various packages are installed (especially when installing X). This may not be to your liking.
+* English Language and UK keyboard
+
+Everything is installed via chroot so no reboot is done until the end (and it's
+an optional step should you prefer to check the installation before booting into
+Arch for the first time).
 
 
 ## Usage
