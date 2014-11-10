@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 #### VERSION ####
-echo 'Arch Install Script Version 0.2.16'
+echo 'Arch Install Script Version 0.2.17'
 echo '=================================='
 echo ''
 
@@ -19,8 +19,8 @@ trap control_c SIGINT
 [[ $PUBLIC_GIT ]] || PUBLIC_GIT='git@github.com:PhilT'
 [[ $PRIVATE_GIT ]] || PRIVATE_GIT='git@bitbucket.org:philat'
 
-PACMAN='pacman -S --noconfirm --noprogressbar'
-AUR='pacman -U --noconfirm --noprogressbar'
+PACMAN='pacman -S --noconfirm --noprogressbar --needed'
+AUR='pacman -U --noconfirm --noprogressbar --needed'
 LOG="/home/$NEWUSER/install.log"
 MNT_LOG="/mnt$LOG"
 TMP_LOG="/tmp/install.log"
@@ -351,9 +351,6 @@ $PACMAN --asdeps alsa-lib git gconf gtk2 libatomic_ops libgcrypt libgnome-keyrin
 aur_cmd 'https://aur.archlinux.org/packages/rb/rbenv/rbenv.tar.gz' $RBENV
 aur_cmd 'https://aur.archlinux.org/packages/ru/ruby-build/ruby-build.tar.gz' $RUBY_BUILD
 aur_cmd 'https://aur.archlinux.org/packages/tt/ttf-ms-fonts/ttf-ms-fonts.tar.gz' $TTF_MS_FONTS
-
-
-
 aur_cmd 'https://aur.archlinux.org/packages/at/atom-editor/atom-editor.tar.gz' $ATOM
 
 chuser_cmd 'dwm' "
