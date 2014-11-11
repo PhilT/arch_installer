@@ -309,8 +309,8 @@ Server = http://bohoomil.com/repo/fonts' >> /etc/pacman.conf
 pacman-key -r 962DDE58 >> $LOG 2>&1
 pacman-key -f 962DDE58 >> $LOG 2>&1
 pacman-key --lsign-key 962DDE58 >> $LOG 2>&1
-pacman -Rdd t1-dejavu-ib
-pacman -Syyu >> $LOG 2>&1
+pacman -Rdd --noconfirm --noprogressbar ttf-dejavu
+pacman -Syyu --noconfirm >> $LOG 2>&1
 $PACMAN ibfonts-meta-base >> $LOG 2>&1
 " $INFINALITY
 
