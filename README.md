@@ -16,8 +16,10 @@ It's got a few assumptions:
 * You may not want all the VIM plugins I've installed
 * X is installed except when `MACHINE=server`
 * VirtualBox guest utils installed when running on a VM
-* Various packages are installed (especially when installing X). This may not be to your liking.
+* Packages such as pcmanfm, urxvt, feh, xautolock are installed
 * English Language and UK keyboard, UK mirrorlist
+* Makepkg will fail if dependencies are not previously installed (as it needs sudo and
+  will ask for a password)
 
 Everything is installed via chroot so no reboot is done until the end (and it's
 an optional step should you prefer to check the installation before booting into

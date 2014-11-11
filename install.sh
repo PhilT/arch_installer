@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 #### VERSION ####
-echo 'Arch Install Script Version 0.2.21'
+echo 'Arch Install Script Version 0.2.22'
 echo '=================================='
 echo ''
 
@@ -64,7 +64,7 @@ if [[ $INSTALL = all || $INSTALL = dryrun ]]; then
   [[ $RUBY_BUILD ]] || RUBY_BUILD=true
   [[ $CUSTOMIZATION ]] || CUSTOMIZATION=true
   [[ $XWINDOWS ]] || XWINDOWS=true
-  [[ $INFINALITY ]] || XWINDOWS=true
+  [[ $INFINALITY ]] || INFINALITY=true
   [[ $TTF_MS_FONTS ]] || TTF_MS_FONTS=true
   [[ $ATOM ]] || ATOM=true
   [[ $SSH_KEY ]] || SSH_KEY=true
@@ -301,7 +301,7 @@ ln -s ../conf.avail/10-sub-pixel-rgb.conf
 " $XWINDOWS
 
 chroot_cmd 'Infinality bundle fonts' "
-if [[ $(grep -qv infinality-bundle /etc/pacman.conf) ]]; then
+if [[ \$(grep -qv infinality-bundle /etc/pacman.conf) ]]; then
   echo '[infinality-bundle]
   Server = http://bohoomil.com/repo/\$arch
   [infinality-bundle-multilib]
