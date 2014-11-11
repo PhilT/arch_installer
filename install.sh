@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 #### VERSION ####
-echo 'Arch Install Script Version 0.2.25'
+echo 'Arch Install Script Version 0.2.26'
 echo '=================================='
 echo ''
 
@@ -82,11 +82,10 @@ $(lspci | grep -q VirtualBox) || IN_VM=false
 [[ $LAPTOP = true ]] && WIFI=true
 [[ $DWM = true || $DOTFILES = true ]] && CREATE_WORKSPACE=true
 
+
 #### FUNCTIONS ####
 
-# pull out functions from arch-root and include them
-sed '/^usage\(\).*/,/^SHELL=.*/d' /usr/bin/arch-chroot > ~/chroot-common
-source ~/chroot-common
+bash <(curl -Ls https://projects.archlinux.org/arch-install-scripts.git/plain/common)
 
 chroot_cmd () {
   title="$1"
@@ -158,7 +157,6 @@ if [[ $BASE = true && $INSTALL != dryrun ]]; then
   mkdir -p $(dirname $MNT_LOG)
   mv $TMP_LOG $MNT_LOG
 
-
   echo 'arch linux base' | tee -a $MNT_LOG
   mkdir -p /mnt/etc/pacman.d
   cp /etc/pacman.d/mirrorlist /mnt/etc/pacman.d/mirrorlist.original
@@ -174,6 +172,7 @@ fi
 
 api_fs_mount /mnt || echo 'api_fs_mount failed' >> $MNT_LOG
 track_mount /etc/resolv.conf /mnt/etc/resolv.conf --bind
+mount_conditionally "[[ -d /mnt/sys/firmware/efi/efivars ]]" efivarfs "/mnt/sys/firmware/efi/efivars" -t efivarfs -o nosuid,noexec,nodev
 chroot_cmd 'setup /dev/null' "[[ -c /dev/null ]] || mknod -m 777 /dev/null c 1 3" true
 
 #### ROOT SETUP ####
@@ -211,7 +210,7 @@ if [[ $UEFI = true ]]; then
   SYSLINUX_CONFIG='/boot/EFI/syslinux/syslinux.cfg'
   BOOTLOADER_EXTRA="mkdir -p /boot/EFI/syslinux
 cp -r /usr/lib/syslinux/efi64/* /boot/EFI/syslinux
-efibootmgr -c -d /dev/$DRIVE -p 1 -l /EFI/syslinux/syslinux.efi -L \"Syslinux\" >> $LOG 2>&1
+efibootmgr -c -l /EFI/syslinux/syslinux.efi -L Syslinux >> $LOG 2>&1
 "
 else
   BOOTLOADER_EXTRA=''
@@ -220,8 +219,8 @@ fi
 
 chroot_cmd 'bootloader' "
 $PACMAN $BOOTLOADER_PACKAGES >> $LOG 2>&1
-$BOOTLOADER_EXTRA
-echo \"PROMPT 1
+eval $BOOTLOADER_EXTRA
+echo \"PROMPT 0
 TIMEOUT 50
 DEFAULT arch
 
