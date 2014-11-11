@@ -85,7 +85,7 @@ $(lspci | grep -q VirtualBox) || IN_VM=false
 
 #### FUNCTIONS ####
 
-bash <(curl -Ls https://projects.archlinux.org/arch-install-scripts.git/plain/common)
+source <(curl -Ls https://projects.archlinux.org/arch-install-scripts.git/plain/common)
 
 chroot_cmd () {
   title="$1"
