@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 #### VERSION ####
-echo 'Arch Install Script Version 0.2.26'
+echo 'Arch Install Script Version 0.2.27'
 echo '=================================='
 echo ''
 
@@ -171,9 +171,8 @@ fi
 #### MOUNTS FOR CHROOT ####
 
 api_fs_mount /mnt || echo 'api_fs_mount failed' >> $MNT_LOG
-track_mount /etc/resolv.conf /mnt/etc/resolv.conf --bind
-mount_conditionally "[[ -d /mnt/sys/firmware/efi/efivars ]]" efivarfs "/mnt/sys/firmware/efi/efivars" -t efivarfs -o nosuid,noexec,nodev
-chroot_cmd 'setup /dev/null' "[[ -c /dev/null ]] || mknod -m 777 /dev/null c 1 3" true
+track_mount /etc/resolv.conf /mnt/etc/resolv.conf --bind >> $MNT_LOG
+chroot_cmd 'setup /dev/null' "mknod -m 777 /dev/null c 1 3" true >> $MNT_LOG
 
 #### ROOT SETUP ####
 
@@ -200,9 +199,9 @@ BOOTLOADER_PACKAGES='syslinux'
 
 if [[ $INTEL = true ]]; then
   BOOTLOADER_PACKAGES="$BOOTLOADER_PACKAGES intel-ucode"
-  INITRD='../intel-ucode.img ../initramfs-linux.img'
+  INITRD='../../intel-ucode.img ../../initramfs-linux.img'
 else
-  INITRD='../initramfs-linux.img'
+  INITRD='../../initramfs-linux.img'
 fi
 
 if [[ $UEFI = true ]]; then
@@ -211,6 +210,7 @@ if [[ $UEFI = true ]]; then
   BOOTLOADER_EXTRA="mkdir -p /boot/EFI/syslinux
 cp -r /usr/lib/syslinux/efi64/* /boot/EFI/syslinux
 efibootmgr -c -l /EFI/syslinux/syslinux.efi -L Syslinux >> $LOG 2>&1
+efibootmgr -v >> $LOG 2>&1
 "
 else
   BOOTLOADER_EXTRA=''
@@ -225,13 +225,13 @@ TIMEOUT 50
 DEFAULT arch
 
 LABEL arch
-  LINUX ../vmlinuz-linux
+  LINUX ../../vmlinuz-linux
   APPEND root=/dev/${DRIVE}2 rw
   APPEND init=/usr/lib/systemd/systemd
   INITRD $INITRD
 
 LABEL archfallback
-  LINUX ../vmlinuz-linux
+  LINUX ../../vmlinuz-linux
   APPEND root=/dev/${DRIVE}2 rw
   APPEND init=/usr/lib/systemd/systemd
   INITRD $INITRD\" > $SYSLINUX_CONFIG
