@@ -12,7 +12,7 @@ It's got a few assumptions:
 * UEFI is enabled by default (`UEFI=false` to disable)
 * `phil` (me!) is the default user
 * `ws` is the default ~/workspace
-* Single partition and swap file
+* Single partition and swap file (plus UEFI partition)
 * You may not want all the VIM plugins I've installed
 * X is installed except when `MACHINE=server`
 * VirtualBox guest utils installed when running on a VM

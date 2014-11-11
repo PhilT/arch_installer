@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 #### VERSION ####
-echo 'Arch Install Script Version 0.2.24'
+echo 'Arch Install Script Version 0.2.25'
 echo '=================================='
 echo ''
 
@@ -145,9 +145,13 @@ if [[ $BASE = true && $INSTALL != dryrun ]]; then
   echo 'filesystem' | tee -a $TMP_LOG
   partprobe /dev/$DRIVE
   sgdisk --zap-all /dev/$DRIVE >> $TMP_LOG 2>&1
-  sgdisk --new=0:0:0 /dev/$DRIVE >> $TMP_LOG 2>&1
-  mkfs.ext4 -F /dev/${DRIVE}1 >> $TMP_LOG 2>&1
-  mount /dev/${DRIVE}1 /mnt
+  sgdisk --new=1:0:512M --typecode=1:ef00 /dev/$DRIVE >> $TMP_LOG 2>&1
+  mkfs.fat -F32 /dev/${DRIVE}1
+  sgdisk --new=2:0:0 /dev/$DRIVE >> $TMP_LOG 2>&1
+  mkfs.ext4 -F /dev/${DRIVE}2 >> $TMP_LOG 2>&1
+  mount /dev/${DRIVE}2 /mnt
+  mkdir -p /mnt/boot
+  mount /dev/${DRIVE}1 /mnt/boot
   partprobe /dev/$DRIVE
 
   echo 'create log folder' | tee -a $TMP_LOG
@@ -208,6 +212,7 @@ if [[ $UEFI = true ]]; then
   BOOTLOADER_EXTRA="mkdir -p /boot/EFI/syslinux
 cp -r /usr/lib/syslinux/efi64/* /boot/EFI/syslinux
 efibootmgr -c -d /dev/$DRIVE -p 1 -l /EFI/syslinux/syslinux.efi -L \"Syslinux\" >> $LOG 2>&1
+efibootmgr -v >> $LOG 2>&1
 "
 else
   BOOTLOADER_EXTRA=''
@@ -223,7 +228,7 @@ DEFAULT arch
 
 LABEL arch
   LINUX ../vmlinuz-linux
-  APPEND root=/dev/${DRIVE}1 rw
+  APPEND root=/dev/${DRIVE}2 rw
   APPEND init=/usr/lib/systemd/systemd
   INITRD $INITRD
 
