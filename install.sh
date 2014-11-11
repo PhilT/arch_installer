@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 #### VERSION ####
-echo 'Arch Install Script Version 0.2.23'
+echo 'Arch Install Script Version 0.2.24'
 echo '=================================='
 echo ''
 
@@ -65,7 +65,6 @@ if [[ $INSTALL = all || $INSTALL = dryrun ]]; then
   [[ $CUSTOMIZATION ]] || CUSTOMIZATION=true
   [[ $XWINDOWS ]] || XWINDOWS=true
   [[ $INFINALITY ]] || INFINALITY=true
-  [[ $TTF_MS_FONTS ]] || TTF_MS_FONTS=true
   [[ $ATOM ]] || ATOM=true
   [[ $SSH_KEY ]] || SSH_KEY=true
   [[ $CREATE_WORKSPACE ]] || CREATE_WORKSPACE=true
@@ -79,7 +78,7 @@ fi
 # Setup some assumptions based on target machine
 $(lspci | grep -q VirtualBox) || IN_VM=false
 [[ $SERVER = true ]] && XWINDOWS=false UEFI=false INTEL=false
-[[ $XWINDOWS = false ]] && ATOM=false TTF_MS_FONTS=false IN_VM=false INFINALITY=false DWM=false
+[[ $XWINDOWS = false ]] && ATOM=false IN_VM=false INFINALITY=false DWM=false
 [[ $LAPTOP = true ]] && WIFI=true
 [[ $DWM = true || $DOTFILES = true ]] && CREATE_WORKSPACE=true
 
@@ -295,7 +294,7 @@ chmod 440 /etc/sudoers.d/shutdown >> $LOG 2>&1
 chroot_cmd 'xwindows packages and applications' "
 $PACMAN xorg-server xorg-server-utils xorg-xinit >> $LOG 2>&1
 $PACMAN conky elementary-icon-theme feh gnome-themes-standard lxappearance pcmanfm >> $LOG 2>&1
-$PACMAN rxvt-unicode slock ttf-ubuntu-font-family xautolock xcursor-vanilla-dmz >> $LOG 2>&1
+$PACMAN rxvt-unicode slock xautolock xcursor-vanilla-dmz >> $LOG 2>&1
 cd /etc/fonts/conf.d
 ln -s ../conf.avail/10-sub-pixel-rgb.conf
 " $XWINDOWS
@@ -354,11 +353,10 @@ $PACMAN --asdeps alsa-lib git gconf gtk2 libatomic_ops libgcrypt libgnome-keyrin
 
 aur_cmd 'https://aur.archlinux.org/packages/rb/rbenv/rbenv.tar.gz' $RBENV
 aur_cmd 'https://aur.archlinux.org/packages/ru/ruby-build/ruby-build.tar.gz' $RUBY_BUILD
-aur_cmd 'https://aur.archlinux.org/packages/tt/ttf-ms-fonts/ttf-ms-fonts.tar.gz' $TTF_MS_FONTS
 aur_cmd 'https://aur.archlinux.org/packages/at/atom-editor/atom-editor.tar.gz' $ATOM
 
 chuser_cmd 'dwm' "
-sudo $PASSWORD | sudo -S $PACMAN libxinerama libxft >> $LOG 2>&1
+sudo $PASSWORD | sudo -S $PACMAN libxinerama >> $LOG 2>&1
 cd $WORKSPACE
 git clone $PUBLIC_GIT/dwm.git >> $LOG 2>&1
 cd dwm
