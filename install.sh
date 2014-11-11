@@ -301,7 +301,7 @@ ln -s ../conf.avail/10-sub-pixel-rgb.conf
 " $XWINDOWS
 
 chroot_cmd 'Infinality bundle fonts' "
-if [[ \$(grep -qv infinality-bundle /etc/pacman.conf) ]]; then
+if [[ `grep -qv infinality-bundle /etc/pacman.conf` ]]; then
   echo '[infinality-bundle]
   Server = http://bohoomil.com/repo/\$arch
   [infinality-bundle-multilib]
