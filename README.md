@@ -99,7 +99,7 @@ All other options are specified as env variables.
 * `INSTALL` -  `all` - everything except `REBOOT`
                `dryrun` - does not execute commands (only logs)
 * `LAPTOP`  - Set extra options such as `$WIFI`
-* `REBOOT=` - `true` if you wish to unmount and reboot at the end
+* `REBOOT=` - `true` if you wish to unmount and reboot at the end. If you don't use this option, when you're ready just do `umount -R /mnt && reboot` yourself
 * `OPTION=` - `false` to turn off options
 
 Before partition creation all commands and output is sent to `/tmp/install.log`. Once the

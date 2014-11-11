@@ -146,7 +146,7 @@ if [[ $BASE = true && $INSTALL != dryrun ]]; then
   partprobe /dev/$DRIVE
   sgdisk --zap-all /dev/$DRIVE >> $TMP_LOG 2>&1
   sgdisk --new=1:0:512M --typecode=1:ef00 /dev/$DRIVE >> $TMP_LOG 2>&1
-  mkfs.fat -F32 /dev/${DRIVE}1
+  mkfs.fat -F32 /dev/${DRIVE}1 >> $TMP_LOG 2>&1
   sgdisk --new=2:0:0 /dev/$DRIVE >> $TMP_LOG 2>&1
   mkfs.ext4 -F /dev/${DRIVE}2 >> $TMP_LOG 2>&1
   mount /dev/${DRIVE}2 /mnt
@@ -212,7 +212,6 @@ if [[ $UEFI = true ]]; then
   BOOTLOADER_EXTRA="mkdir -p /boot/EFI/syslinux
 cp -r /usr/lib/syslinux/efi64/* /boot/EFI/syslinux
 efibootmgr -c -d /dev/$DRIVE -p 1 -l /EFI/syslinux/syslinux.efi -L \"Syslinux\" >> $LOG 2>&1
-efibootmgr -v >> $LOG 2>&1
 "
 else
   BOOTLOADER_EXTRA=''
@@ -222,7 +221,7 @@ fi
 chroot_cmd 'bootloader' "
 $PACMAN $BOOTLOADER_PACKAGES >> $LOG 2>&1
 $BOOTLOADER_EXTRA
-echo \"PROMPT 0
+echo \"PROMPT 1
 TIMEOUT 50
 DEFAULT arch
 
@@ -314,7 +313,7 @@ Server = http://bohoomil.com/repo/fonts' >> /etc/pacman.conf
 pacman-key -r 962DDE58 >> $LOG 2>&1
 pacman-key -f 962DDE58 >> $LOG 2>&1
 pacman-key --lsign-key 962DDE58 >> $LOG 2>&1
-pacman -Syyu --noconfirm >> $LOG 2>&1
+pacman -Syy --noconfirm >> $LOG 2>&1
 pacman -Rdd --noconfirm --noprogressbar ttf-dejavu
 $PACMAN ibfonts-meta-base >> $LOG 2>&1
 " $INFINALITY
