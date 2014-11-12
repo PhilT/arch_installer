@@ -98,13 +98,13 @@ ch_cmd () {
   cmds=""
 
   while (( "$#" )); do
-    cmds="$cmds$1 >> $LOG 2>&1\n"
+    cmds="$cmds$1 >> $LOG 2>&1"$'\n'
     shift
   done
 
   if [[ $run = true ]]; then
     print_title "$title"
-    echo -e "$cmds" | sed "s/$PASSWORD/*********/" >> $MNT_LOG
+    echo "$cmds" | sed "s/$PASSWORD/*********/" >> $MNT_LOG
 
     if [[ $INSTALL != dryrun ]]; then
       LANG=C chroot /mnt su $user -c "$cmds" >> $MNT_LOG 2>&1
