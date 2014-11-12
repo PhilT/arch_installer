@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 #### VERSION ####
-echo 'Arch Install Script Version 0.3.3'
+echo 'Arch Install Script Version 0.3.4'
 echo '=================================='
 echo ''
 
