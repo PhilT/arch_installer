@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 #### VERSION ####
-echo 'Arch Install Script Version 0.3.4'
+echo 'Arch Install Script Version 0.3.5'
 echo '=================================='
 echo ''
 
@@ -349,21 +349,21 @@ aur_cmd $RBENV 'https://aur.archlinux.org/packages/rb/rbenv/rbenv.tar.gz'
 aur_cmd $RUBY_BUILD 'https://aur.archlinux.org/packages/ru/ruby-build/ruby-build.tar.gz'
 aur_cmd $ATOM 'https://aur.archlinux.org/packages/at/atom-editor/atom-editor.tar.gz'
 
-chuser_cmd $DWM 'dwm' \
+chuser_cmd $DWM 'dwm repo' \
   "sudo $PASSWORD | sudo -S $PACMAN libxinerama" \
   "cd $WORKSPACE" \
   "git clone $PUBLIC_GIT/dwm.git" \
   "cd dwm" \
   "echo $PASSWORD | sudo -S make clean install"
 
-chuser_cmd $BIN '~/bin' \
+chuser_cmd $BIN 'bin repo' \
   "cd ~" \
   "git clone $PUBLIC_GIT/bin.git" \
   "echo PASSWORD_DIR=$WORKSPACE/documents | tee -a ~/.pwconfig" \
   "echo PASSWORD_FILE=.passwords.csv | tee -a ~/.pwconfig" \
   "echo EDIT=vim | tee -a ~/.pwconfig"
 
-chuser_cmd $DOTFILES 'dotfiles' \
+chuser_cmd $DOTFILES 'dotfiles repo' \
   "cd $WORKSPACE" \
   "git clone $PUBLIC_GIT/dotfiles.git" \
   "cd dotfiles" \
