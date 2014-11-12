@@ -392,8 +392,7 @@ chuser_cmd $VIM_CONFIG 'vim plugins and theme' \
   "git clone https://github.com/kien/ctrlp.vim.git" \
   "mkdir -p ~/.vim/colors" \
   "cd ~/.vim/colors" \
-  "curl -s -O https://raw.githubusercontent.com/tomasr/molokai/master/colors/molokai.vim" \
-  "vim -c 'Helptags | q'"
+  "curl -s -O https://raw.githubusercontent.com/tomasr/molokai/master/colors/molokai.vim"
 
 
 #### REBOOT ####
