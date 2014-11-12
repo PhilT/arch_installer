@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 #### VERSION ####
-echo 'Arch Install Script Version 0.3.6'
+echo 'Arch Install Script Version 0.3.7'
 echo '=================================='
 echo ''
 
@@ -104,7 +104,7 @@ ch_cmd () {
 
   if [[ $run = true ]]; then
     print_title "$title"
-    echo "$cmds" | sed "s/$PASSWORD/*********/" >> $MNT_LOG
+    echo "$cmds" | sed "s/$PASSWORD/*********/g" >> $MNT_LOG
 
     if [[ $INSTALL != dryrun ]]; then
       LANG=C chroot /mnt su $user -c "$cmds" >> $MNT_LOG 2>&1
@@ -135,7 +135,7 @@ aur_cmd () {
     "cd ~/packages" \
     "curl -s $url | tar -zx" \
     "cd $name" \
-    "makepkg -cf --noprogressbar" \
+    "makepkg -cf --noprogressbar --noconfirm" \
 
 
   chroot_cmd $run "$name install" \
@@ -146,8 +146,6 @@ aur_cmd () {
 #### BASE INSTALL ####
 
 if [[ $BASE = true && $INSTALL != dryrun ]]; then
-  print_title "\n\nstarting installation\n-------------------------------"
-
   print_title 'keyboard'
   loadkeys uk
 
@@ -176,7 +174,7 @@ if [[ $BASE = true && $INSTALL != dryrun ]]; then
   URL="https://www.archlinux.org/mirrorlist/?country=GB&protocol=http&ip_version=4&use_mirror_status=on"
   curl -s $URL | sed 's/^#Server/Server/' > /etc/pacman.d/mirrorlist
   pacman -Syy >> $MNT_LOG 2>&1 # Refresh package lists
-  pacstrap /mnt base >> $MNT_LOG 2>&1
+  pacstrap /mnt base bash-completion >> $MNT_LOG 2>&1
 
   print_title 'fstab'
   genfstab -U -p /mnt >> /mnt/etc/fstab
@@ -242,12 +240,12 @@ DEFAULT arch
 
 LABEL arch
   LINUX ../../vmlinuz-linux
-  APPEND root=/dev/${DRIVE}2 rw init=/usr/lib/systemd/systemd
+  APPEND root=/dev/${DRIVE}2 rw
   INITRD ${INITRD}.img
 
 LABEL archfallback
   LINUX ../../vmlinuz-linux
-  APPEND root=/dev/${DRIVE}2 rw init=/usr/lib/systemd/systemd
+  APPEND root=/dev/${DRIVE}2 rw
   INITRD ${INITRD}-fallback.img\" | tee $SYSLINUX_CONFIG"
 
 chroot_cmd $NETWORK 'network (inc ssh)' \
@@ -296,8 +294,8 @@ chroot_cmd $CUSTOMIZATION 'pacman & sudoer customization' \
 
 chroot_cmd $XWINDOWS 'xwindows packages and applications' \
   "$PACMAN xorg-server xorg-server-utils xorg-xinit" \
-  "$PACMAN conky elementary-icon-theme feh gnome-themes-standard lxappearance pcmanfm" \
-  "$PACMAN rxvt-unicode slock xautolock xcursor-vanilla-dmz" \
+  "$PACMAN conky elementary-icon-theme feh gnome-themes-standard lxappearance mesa-vdpau" \
+  "$PACMAN pcmanfm rxvt-unicode slock xautolock xcursor-vanilla-dmz" \
   "cd /etc/fonts/conf.d" \
   "ln -s ../conf.avail/10-sub-pixel-rgb.conf"
 
@@ -336,7 +334,7 @@ chroot_cmd $SSH_KEY 'ssh key ownership' \
   "chmod 400 .ssh/id_rsa"
 
 chuser_cmd $SSH_KEY 'trusted hosts' \
-  "ssh-keyscan -H github.com > ~/.ssh/known_hosts"
+  "ssh-keyscan -H github.com | tee -a ~/.ssh/known_hosts"
 
 chuser_cmd $CREATE_WORKSPACE 'workspace' "mkdir -p $WORKSPACE"
 
@@ -345,7 +343,7 @@ chroot_cmd $ATOM 'dependencies for Atom' \
 
 aur_cmd $RBENV 'https://aur.archlinux.org/packages/rb/rbenv/rbenv.tar.gz'
 aur_cmd $RUBY_BUILD 'https://aur.archlinux.org/packages/ru/ruby-build/ruby-build.tar.gz'
-aur_cmd $ATOM 'https://aur.archlinux.org/packages/at/atom-editor/atom-editor.tar.gz'
+aur_cmd $ATOM 'https://aur.archlinux.org/packages/at/atom-editor-bin/atom-editor-bin.tar.gz'
 
 chuser_cmd $DWM 'dwm repo' \
   "sudo $PASSWORD | sudo -S $PACMAN libxinerama" \
