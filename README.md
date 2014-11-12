@@ -4,11 +4,16 @@ A script to install and configure Arch Linux for server, desktop or laptop. This
 executable documentation for my setup and probably requires modifying for your needs. It also
 serves as a useful reference for how to setup a basic Arch Linux system. Fork for your pleasure.
 
-It's got a few assumptions:
+## Issues
+
+* Atom Editor install is currently broken (recommend `ATOM=false` until fixed)
+
+
+## A few defaults
 
 * WARNING - Existing partitions will be deleted
-* GPT is the default partition type
-* syslinux is the default bootloader
+* GPT is the partition type
+* syslinux is the bootloader
 * UEFI is enabled by default (`UEFI=false` to disable)
 * `phil` (me!) is the default user
 * `ws` is the default ~/workspace
@@ -17,7 +22,7 @@ It's got a few assumptions:
 * X is installed except when `MACHINE=server`
 * VirtualBox guest utils installed when running on a VM
 * Packages such as pcmanfm, urxvt, feh, xautolock are installed
-* English Language and UK keyboard, UK mirrorlist
+* English Language, UK keyboard and UK mirrorlist selected
 * Makepkg will fail if dependencies are not previously installed (as it needs sudo and
   will ask for a password)
 
