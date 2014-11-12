@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 #### VERSION ####
-echo 'Arch Install Script Version 0.3.2'
+echo 'Arch Install Script Version 0.3.3'
 echo '=================================='
 echo ''
 
@@ -115,15 +115,13 @@ ch_cmd () {
 chroot_cmd () {
   run="$1"; shift
   title="$1"; shift
-  cmds="$@"
-  ch_cmd "$run" "$title" 'root' $cmds
+  ch_cmd "$run" "$title" 'root' $@
 }
 
 chuser_cmd () {
   run="$1"; shift
   title="$1"; shift
-  cmds="$@"
-  ch_cmd "$run" "$title" "$NEWUSER" $cmds
+  ch_cmd "$run" "$title" "$NEWUSER" $@
 }
 
 # Move to dotfiles
