@@ -115,13 +115,13 @@ ch_cmd () {
 chroot_cmd () {
   run="$1"; shift
   title="$1"; shift
-  ch_cmd "$run" "$title" 'root' $@
+  ch_cmd "$run" "$title" 'root' "$@"
 }
 
 chuser_cmd () {
   run="$1"; shift
   title="$1"; shift
-  ch_cmd "$run" "$title" "$NEWUSER" $@
+  ch_cmd "$run" "$title" "$NEWUSER" "$@"
 }
 
 # Move to dotfiles
