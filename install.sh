@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 #### VERSION ####
-echo 'Arch Install Script Version 0.3.5'
+echo 'Arch Install Script Version 0.3.6'
 echo '=================================='
 echo ''
 
@@ -216,9 +216,9 @@ BOOTLOADER_PACKAGES='syslinux'
 
 if [[ $INTEL = true ]]; then
   BOOTLOADER_PACKAGES="$BOOTLOADER_PACKAGES intel-ucode"
-  INITRD='../../intel-ucode.img ../../initramfs-linux.img'
+  INITRD='../../intel-ucode.img ../../initramfs-linux'
 else
-  INITRD='../../initramfs-linux.img'
+  INITRD='../../initramfs-linux'
 fi
 
 if [[ $UEFI = true ]]; then
@@ -242,15 +242,13 @@ DEFAULT arch
 
 LABEL arch
   LINUX ../../vmlinuz-linux
-  APPEND root=/dev/${DRIVE}2 rw
-  APPEND init=/usr/lib/systemd/systemd
-  INITRD $INITRD
+  APPEND root=/dev/${DRIVE}2 rw init=/usr/lib/systemd/systemd
+  INITRD ${INITRD}.img
 
 LABEL archfallback
   LINUX ../../vmlinuz-linux
-  APPEND root=/dev/${DRIVE}2 rw
-  APPEND init=/usr/lib/systemd/systemd
-  INITRD $INITRD\" | tee $SYSLINUX_CONFIG"
+  APPEND root=/dev/${DRIVE}2 rw init=/usr/lib/systemd/systemd
+  INITRD ${INITRD}-fallback.img\" | tee $SYSLINUX_CONFIG"
 
 chroot_cmd $NETWORK 'network (inc ssh)' \
   "cp /etc/hosts /etc/hosts.original" \
