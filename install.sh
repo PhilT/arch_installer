@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 #### VERSION ####
-echo 'Arch Install Script Version 0.3.7'
+echo 'Arch Install Script Version 0.3.8'
 echo '=================================='
 echo ''
 
@@ -55,9 +55,10 @@ if [[ $INSTALL = all || $INSTALL = dryrun ]]; then
   [[ $BOOTLOADER ]] || BOOTLOADER=true
   [[ $UEFI ]] || UEFI=true
   [[ $NETWORK ]] || NETWORK=true
+  [[ $SENSORS ]] SENSORS=true
   [[ $ADD_USER ]] || ADD_USER=true
   [[ $STANDARD ]] || STANDARD=true
-  [[ $IN_VM ]] || IN_VM=true
+  [[ $VIRTUALBOX_GUEST ]] || VIRTUALBOX_GUEST=true
   [[ $AUR_FLAGS ]] || AUR_FLAGS=true
   [[ $RBENV ]] || RBENV=true
   [[ $RUBY_BUILD ]] || RUBY_BUILD=true
@@ -75,9 +76,9 @@ if [[ $INSTALL = all || $INSTALL = dryrun ]]; then
 fi
 
 # Setup some assumptions based on target machine
-$(lspci | grep -q VirtualBox) || IN_VM=false
+$(lspci | grep -q VirtualBox) && SENSORS=false || VIRTUALBOX_GUEST=false
 [[ $SERVER = true ]] && XWINDOWS=false UEFI=false INTEL=false
-[[ $XWINDOWS = false ]] && ATOM=false IN_VM=false INFINALITY=false DWM=false
+[[ $XWINDOWS = false ]] && ATOM=false VIRTUALBOX_GUEST=false INFINALITY=false DWM=false
 [[ $LAPTOP = true ]] && WIFI=true
 [[ $DWM = true || $DOTFILES = true ]] && CREATE_WORKSPACE=true
 
@@ -202,6 +203,7 @@ chroot_cmd $LOCALE 'time, locale, keyboard' \
   "ntpd -qg" \
   "hwclock --systohc" \
   "echo KEYMAP=\"uk\" | tee /etc/vconsole.conf" \
+  "localectl set-x11-keymap gb"
 
 chroot_cmd $SWAPFILE 'swap file' \
   "fallocate -l 512M /swapfile" \
@@ -260,7 +262,9 @@ chroot_cmd $WIFI 'wifi' "$PACMAN wpa_supplicant wpa_actiond"
 
 chroot_cmd $SERVER 'server packages' \
   "sed -i 's/#?PermitRootLogin.*/PermitRootLogin no/' /etc/ssh/sshd_config" \
-  "systemctl enable sshd" \
+  "systemctl enable sshd"
+
+chroot_cmd $SENSORS 'sensors' \
   "$PACMAN lm_sensors" \
   "sensors-detect --auto"
 
@@ -295,9 +299,20 @@ chroot_cmd $CUSTOMIZATION 'pacman & sudoer customization' \
 chroot_cmd $XWINDOWS 'xwindows packages and applications' \
   "$PACMAN xorg-server xorg-server-utils xorg-xinit" \
   "$PACMAN conky elementary-icon-theme feh gnome-themes-standard lxappearance mesa-vdpau" \
-  "$PACMAN pcmanfm rxvt-unicode slock xautolock xcursor-vanilla-dmz" \
+  "$PACMAN pcmanfm rxvt-unicode slock ttf-arphic-uming xautolock xcursor-vanilla-dmz" \
   "cd /etc/fonts/conf.d" \
-  "ln -s ../conf.avail/10-sub-pixel-rgb.conf"
+  "ln -s ../conf.avail/10-sub-pixel-rgb.conf ." \
+  "cp /etc/conky/conky.conf /etc/conky/conky.conf.original" \
+  "echo 'out_to_console yes
+out_to_x no
+background no
+update_interval 5
+total_run_times 0
+use_spacer none
+
+TEXT
+${cpu cpu1}% ${cpu cpu2}% ${cpu cpu3}% ${cpu cpu4}% | $memperc% ($mem) | ${time %Y-%m-%d %H:%M}
+' | tee /etc/conky/conky.conf"
 
 chroot_cmd $INFINALITY 'Infinality bundle fonts' \
   "echo -e '[infinality-bundle]\nServer = http://bohoomil.com/repo/\$arch' | tee -a /etc/pacman.conf" \
@@ -310,12 +325,11 @@ chroot_cmd $INFINALITY 'Infinality bundle fonts' \
   "pacman -Rdd --noconfirm --noprogressbar ttf-dejavu" \
   "$PACMAN ibfonts-meta-base"
 
-chroot_cmd $IN_VM 'virtualbox guest' \
-  "$PACMAN virtualbox-guest-utils virtualbox-guest-dkms" \
-  "echo vboxguest | tee -a /etc/modules-load.d/virtualbox.conf" \
-  "echo vboxsf | tee -a /etc/modules-load.d/virtualbox.conf" \
-  "echo vboxvideo | tee -a /etc/modules-load.d/virtualbox.conf" \
-  "systemctl enable vboxservice"
+chroot_cmd $VIRTUALBOX_GUEST 'virtualbox guest' \
+  "$PACMAN virtualbox-guest-utils virtualbox-guest-dkms virtualbox-guest-modules" \
+  "echo -e 'vboxguest\nvboxsf\nvboxvideo\n' | tee /etc/modules-load.d/virtualbox.conf" \
+  "systemctl enable vboxservice dkms" \
+  "groupadd vboxusers && gpasswd -a $NEWUSER vboxusers" \
 
 
 #### USER SETUP ####
@@ -339,10 +353,12 @@ chuser_cmd $SSH_KEY 'trusted hosts' \
 chuser_cmd $CREATE_WORKSPACE 'workspace' "mkdir -p $WORKSPACE"
 
 chroot_cmd $ATOM 'dependencies for Atom' \
-  "$PACMAN --asdeps alsa-lib git gconf gtk2 libatomic_ops libgcrypt libgnome-keyring libnotify libxtst nodejs nss python2"
+  "$PACMAN --asdeps alsa-lib git gconf gtk2 libatomic_ops libgnome-keyring libnotify libxtst nodejs nss python2"
 
 aur_cmd $RBENV 'https://aur.archlinux.org/packages/rb/rbenv/rbenv.tar.gz'
 aur_cmd $RUBY_BUILD 'https://aur.archlinux.org/packages/ru/ruby-build/ruby-build.tar.gz'
+aur_cmd $CHROME 'https://aur.archlinux.org/packages/go/google-chrome/google-chrome.tar.gz'
+aur_cmd $ATOM 'https://aur.archlinux.org/packages/li/libgcrypt15/libgcrypt15.tar.gz'
 aur_cmd $ATOM 'https://aur.archlinux.org/packages/at/atom-editor-bin/atom-editor-bin.tar.gz'
 
 chuser_cmd $DWM 'dwm repo' \
