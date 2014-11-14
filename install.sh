@@ -299,8 +299,8 @@ chroot_cmd $CUSTOMIZATION 'pacman & sudoer customization' \
 chroot_cmd $XWINDOWS 'xwindows packages and applications' \
   "$PACMAN xorg-server xorg-server-utils xorg-xinit" \
   "$PACMAN conky elementary-icon-theme feh gnome-themes-standard lxappearance mesa-vdpau" \
-  "$PACMAN pcmanfm rxvt-unicode slock ttf-arphic-uming xautolock xcursor-vanilla-dmz" \
-  "$PACMAN gimp inkscape"
+  "$PACMAN pcmanfm rxvt-unicode slock terminus-font ttf-arphic-uming xautolock xcursor-vanilla-dmz" \
+  "$PACMAN gimp inkscape xsel"
   "cd /etc/fonts/conf.d" \
   "ln -s ../conf.avail/10-sub-pixel-rgb.conf ." \
   "cp /etc/conky/conky.conf /etc/conky/conky.conf.original" \
