@@ -300,6 +300,7 @@ chroot_cmd $XWINDOWS 'xwindows packages and applications' \
   "$PACMAN xorg-server xorg-server-utils xorg-xinit" \
   "$PACMAN conky elementary-icon-theme feh gnome-themes-standard lxappearance mesa-vdpau" \
   "$PACMAN pcmanfm rxvt-unicode slock ttf-arphic-uming xautolock xcursor-vanilla-dmz" \
+  "$PACMAN gimp inkscape"
   "cd /etc/fonts/conf.d" \
   "ln -s ../conf.avail/10-sub-pixel-rgb.conf ." \
   "cp /etc/conky/conky.conf /etc/conky/conky.conf.original" \
@@ -360,6 +361,7 @@ aur_cmd $RUBY_BUILD 'https://aur.archlinux.org/packages/ru/ruby-build/ruby-build
 aur_cmd $CHROME 'https://aur.archlinux.org/packages/go/google-chrome/google-chrome.tar.gz'
 aur_cmd $ATOM 'https://aur.archlinux.org/packages/li/libgcrypt15/libgcrypt15.tar.gz'
 aur_cmd $ATOM 'https://aur.archlinux.org/packages/at/atom-editor-bin/atom-editor-bin.tar.gz'
+aur_cmd $XWINDOWS 'https://aur.archlinux.org/packages/ur/urxvt-clipboard/urxvt-clipboard.tar.gz'
 
 chuser_cmd $DWM 'dwm repo' \
   "sudo $PASSWORD | sudo -S $PACMAN libxinerama" \
@@ -379,32 +381,8 @@ chuser_cmd $DOTFILES 'dotfiles repo' \
   "cd $WORKSPACE" \
   "git clone $PUBLIC_GIT/dotfiles.git" \
   "cd dotfiles" \
-  "bin/sync.sh"
-
-
-chuser_cmd $VIM_CONFIG 'vim plugins and theme' \
-  "mkdir -p ~/.vim/bundle" \
-  "cd ~/.vim/bundle" \
-  "git clone https://github.com/tpope/vim-pathogen.git" \
-  "git clone https://github.com/tpope/vim-surround.git" \
-  "git clone https://github.com/msanders/snipmate.vim.git" \
-  "git clone https://github.com/scrooloose/nerdtree.git" \
-  "git clone https://github.com/vim-ruby/vim-ruby.git" \
-  "git clone https://github.com/tpope/vim-rails.git" \
-  "git clone https://github.com/tpope/vim-rake.git" \
-  "git clone https://github.com/tpope/vim-bundler.git" \
-  "git clone https://github.com/slim-template/vim-slim.git" \
-  "git clone https://github.com/tpope/vim-git.git" \
-  "git clone https://github.com/tpope/vim-fugitive.git" \
-  "git clone https://github.com/tpope/vim-markdown.git" \
-  "git clone https://github.com/tpope/vim-dispatch.git" \
-  "git clone https://github.com/Keithbsmiley/rspec.vim.git" \
-  "git clone https://github.com/mileszs/ack.vim.git" \
-  "git clone https://github.com/bling/vim-airline.git" \
-  "git clone https://github.com/kien/ctrlp.vim.git" \
-  "mkdir -p ~/.vim/colors" \
-  "cd ~/.vim/colors" \
-  "curl -s -O https://raw.githubusercontent.com/tomasr/molokai/master/colors/molokai.vim"
+  "bin/sync.sh" \
+  "bin/vim_plugins.sh"
 
 
 #### REBOOT ####
