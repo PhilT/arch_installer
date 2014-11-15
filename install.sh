@@ -53,7 +53,7 @@ if [[ $INSTALL = all || $INSTALL = dryrun ]]; then
   [[ $BOOTLOADER ]] || BOOTLOADER=true
   [[ $UEFI ]] || UEFI=true
   [[ $NETWORK ]] || NETWORK=true
-  [[ $SENSORS ]] SENSORS=true
+  [[ $SENSORS ]] || SENSORS=true
   [[ $ADD_USER ]] || ADD_USER=true
   [[ $STANDARD ]] || STANDARD=true
   [[ $AUR_FLAGS ]] || AUR_FLAGS=true

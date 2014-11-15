@@ -18,13 +18,7 @@ serves as a useful reference for how to setup a basic Arch Linux system. Fork fo
 * `phil` (me!) is the default user
 * `ws` is the default ~/workspace
 * Single partition and swap file (plus UEFI partition)
-* You may not want all the VIM plugins I've installed
-* X is installed except when `MACHINE=server`
-* VirtualBox guest utils installed when running on a VM
-* Packages such as pcmanfm, urxvt, feh, xautolock are installed
 * English Language, UK keyboard and UK mirrorlist selected
-* Makepkg will fail if dependencies are not previously installed (as it needs sudo and
-  will ask for a password)
 
 Everything is installed via chroot so no reboot is done until the end (and it's
 an optional step should you prefer to check the installation before booting into
@@ -32,6 +26,9 @@ Arch for the first time).
 
 
 ## Motives
+
+I realise that Archlinux is a rolling release system and that's why I want it but I
+also want a repeatable setup.
 
 * I like to have executable, repeatable documentation of everything I do
 * I'm always (re)installing new or old machines and tinkering (read: breaking)
@@ -41,7 +38,7 @@ Arch for the first time).
 
 ## Usage
 
-I need SSH keys for access to my github and bitbucket repos. For testing I have a Windows host
+I need SSH keys for access to my github repos. For testing I have a Windows host
 and VirtualBox VM guest.
 
 Boot an Arch Linux Live CD (https://www.archlinux.org/download/) and run the following commands:
@@ -70,11 +67,11 @@ Non-interactive install (handy for testing):
 
 Instead of installing everything omit INSTALL and specify what you want:
 
-    MACHINE=server RBENV=true bash <(curl -Ls http://goo.gl/tKEBG9)
+    MACHINE=server NOPASS_BOOT=true bash <(curl -Ls http://goo.gl/tKEBG9)
 
-Install everything except the Vim config:
+Install everything except the no pass on boot:
 
-    MACHINE=desktop INSTALL=all VIM_CONFIG=false bash <(curl -Ls http://goo.gl/tKEBG9)
+    MACHINE=desktop INSTALL=all NOPASS_BOOT=false bash <(curl -Ls http://goo.gl/tKEBG9)
 
 `MACHINE=server` sets some things like no XWINDOWS and no UEFI. Any other name just sets it as
 the host name.
