@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 #### VERSION ####
-echo 'Arch Install Script Version 0.3.8'
+echo 'Arch Install Script Version 0.4.0'
 echo '=================================='
 echo ''
 
@@ -44,7 +44,7 @@ echo "INSTALL: $INSTALL"
 #### OPTIONS #####
 
 if [[ $INSTALL = all || $INSTALL = dryrun ]]; then
-  [[ $MACHINE = server ]] && SERVER=true
+  [[ $SERVER ]] || SERVER=false
 
   [[ $BASE ]] || BASE=true
   [[ $LOCALE ]] || LOCALE=true
@@ -66,9 +66,8 @@ if [[ $INSTALL = all || $INSTALL = dryrun ]]; then
 fi
 
 # Setup some assumptions based on target machine
-$(lspci | grep -q VirtualBox) && SENSORS=false
-[[ $SERVER = true ]] && XWINDOWS=false UEFI=false INTEL=false
-[[ $LAPTOP = true ]] && WIFI=true
+$(lspci | grep -q VirtualBox) && SENSORS=false INTEL=false
+[[ $SERVER = true ]] && UEFI=false INTEL=false
 
 
 #### FUNCTIONS ####
@@ -227,8 +226,6 @@ chroot_cmd $NETWORK 'network (inc ssh)' \
   "nic_name=$(ls /sys/class/net | grep -vm 1 lo)" \
   "systemctl enable dhcpcd@\$nic_name" \
   "$PACMAN openssh" \
-
-chroot_cmd $WIFI 'wifi' "$PACMAN wpa_supplicant wpa_actiond"
 
 chroot_cmd $SERVER 'server packages' \
   "sed -i 's/#?PermitRootLogin.*/PermitRootLogin no/' /etc/ssh/sshd_config" \
