@@ -59,13 +59,14 @@ if [[ $INSTALL = all || $INSTALL = dryrun ]]; then
   [[ $ADD_USER ]] || ADD_USER=true
   [[ $STANDARD ]] || STANDARD=true
   [[ $VIRTUALBOX_GUEST ]] || VIRTUALBOX_GUEST=true
+  [[ $PACMAN_CONFIG ]] || PACMAN_CONFIG=true
   [[ $AUR_FLAGS ]] || AUR_FLAGS=true
+  [[ $NOPASS_BOOT ]] || NOPASS_BOOT=true
   [[ $RBENV ]] || RBENV=true
   [[ $RUBY_BUILD ]] || RUBY_BUILD=true
   [[ $CUSTOMIZATION ]] || CUSTOMIZATION=true
   [[ $XWINDOWS ]] || XWINDOWS=true
   [[ $INFINALITY ]] || INFINALITY=true
-  [[ $ATOM ]] || ATOM=true
   [[ $SSH_KEY ]] || SSH_KEY=true
   [[ $CREATE_WORKSPACE ]] || CREATE_WORKSPACE=true
   [[ $DWM ]] || DWM=true
@@ -78,7 +79,7 @@ fi
 # Setup some assumptions based on target machine
 $(lspci | grep -q VirtualBox) && SENSORS=false || VIRTUALBOX_GUEST=false
 [[ $SERVER = true ]] && XWINDOWS=false UEFI=false INTEL=false
-[[ $XWINDOWS = false ]] && ATOM=false VIRTUALBOX_GUEST=false INFINALITY=false DWM=false
+[[ $XWINDOWS = false ]] && VIRTUALBOX_GUEST=false INFINALITY=false DWM=false
 [[ $LAPTOP = true ]] && WIFI=true
 [[ $DWM = true || $DOTFILES = true ]] && CREATE_WORKSPACE=true
 
@@ -279,9 +280,11 @@ chroot_cmd $ADD_USER 'user' \
 chroot_cmd $SET_PASSWORD 'root password' "echo -e '$PASSWORD\n$PASSWORD\n' | passwd"
 chroot_cmd $SET_PASSWORD 'user password' "echo -e '$PASSWORD\n$PASSWORD\n' | passwd $NEWUSER"
 
+chroot_cmd $PACMAN_CONFIG 'pacman config' \
+  "cp /etc/makepkg.conf /etc/makepkg.conf.original"
+
 # optimised for specific architecture and build times
 chroot_cmd $AUR_FLAGS 'build flags (AUR)' \
-  "cp /etc/makepkg.conf /etc/makepkg.conf.original" \
   "sed -i 's/CFLAGS=.*/CFLAGS=\"-march=native -O2 -pipe -fstack-protector-strong --param=ssp-buffer-size=4\"/' /etc/makepkg.conf" \
   "sed -i 's/CXXFLAGS=.*/CXXFLAGS=\"\${CFLAGS}\"/' /etc/makepkg.conf" \
   "sed -i 's/.*MAKEFLAGS=.*/MAKEFLAGS=\"-j`nproc`\"/' /etc/makepkg.conf" \
@@ -289,11 +292,10 @@ chroot_cmd $AUR_FLAGS 'build flags (AUR)' \
   "sed -i 's/#PKGDEST=.*/PKGDEST=\/tmp/' /etc/makepkg.conf" \
   "sed -i s/.*PKGEXT=.*/PKGEXT='.pkg.tar'/ /etc/makepkg.conf"
 
-chroot_cmd $CUSTOMIZATION 'pacman & sudoer customization' \
+chroot_cmd $NOPASS_BOOT 'no password on shutdown/reboot' \
   "cp /etc/pacman.conf /etc/pacman.conf.original" \
   "sed -i s/#Color/Color/ /etc/pacman.conf" \
-  "echo '$NEWUSER ALL=NOPASSWD:/sbin/shutdown' | tee -a /etc/sudoers.d/shutdown" \
-  "echo '$NEWUSER ALL=NOPASSWD:/sbin/reboot' | tee -a /etc/sudoers.d/shutdown" \
+  "echo '$NEWUSER $MACHINE =NOPASSWD: /usr/bin/systemctl poweroff,/usr/bin/systemctl reboot' | tee -a /etc/sudoers.d/shutdown" \
   "chmod 440 /etc/sudoers.d/shutdown"
 
 chroot_cmd $XWINDOWS 'xwindows packages and applications' \
@@ -353,14 +355,11 @@ chuser_cmd $SSH_KEY 'trusted hosts' \
 
 chuser_cmd $CREATE_WORKSPACE 'workspace' "mkdir -p $WORKSPACE"
 
-chroot_cmd $ATOM 'dependencies for Atom' \
-  "$PACMAN --asdeps alsa-lib git gconf gtk2 libatomic_ops libgnome-keyring libnotify libxtst nodejs nss python2"
+chroot_cmd $NODE '$PACMAN nodejs'
 
 aur_cmd $RBENV 'https://aur.archlinux.org/packages/rb/rbenv/rbenv.tar.gz'
 aur_cmd $RUBY_BUILD 'https://aur.archlinux.org/packages/ru/ruby-build/ruby-build.tar.gz'
 aur_cmd $CHROME 'https://aur.archlinux.org/packages/go/google-chrome/google-chrome.tar.gz'
-aur_cmd $ATOM 'https://aur.archlinux.org/packages/li/libgcrypt15/libgcrypt15.tar.gz'
-aur_cmd $ATOM 'https://aur.archlinux.org/packages/at/atom-editor-bin/atom-editor-bin.tar.gz'
 aur_cmd $XWINDOWS 'https://aur.archlinux.org/packages/ur/urxvt-clipboard/urxvt-clipboard.tar.gz'
 
 chuser_cmd $DWM 'dwm repo' \
