@@ -17,10 +17,8 @@ trap control_c SIGINT
 [[ $WORKSPACE ]] || WORKSPACE='~/ws' # keeping it short for window titles
 [[ $DRIVE ]] || DRIVE='sda'
 [[ $PUBLIC_GIT ]] || PUBLIC_GIT='git@github.com:PhilT'
-[[ $PRIVATE_GIT ]] || PRIVATE_GIT='git@bitbucket.org:philat'
 
 PACMAN='pacman -S --noconfirm --noprogressbar --needed'
-AUR='pacman -U --noconfirm --noprogressbar --needed'
 LOG='install.log'
 MNT_LOG=$LOG
 
@@ -58,30 +56,19 @@ if [[ $INSTALL = all || $INSTALL = dryrun ]]; then
   [[ $SENSORS ]] SENSORS=true
   [[ $ADD_USER ]] || ADD_USER=true
   [[ $STANDARD ]] || STANDARD=true
-  [[ $VIRTUALBOX_GUEST ]] || VIRTUALBOX_GUEST=true
-  [[ $PACMAN_CONFIG ]] || PACMAN_CONFIG=true
   [[ $AUR_FLAGS ]] || AUR_FLAGS=true
   [[ $NOPASS_BOOT ]] || NOPASS_BOOT=true
-  [[ $RBENV ]] || RBENV=true
-  [[ $RUBY_BUILD ]] || RUBY_BUILD=true
   [[ $CUSTOMIZATION ]] || CUSTOMIZATION=true
-  [[ $XWINDOWS ]] || XWINDOWS=true
   [[ $INFINALITY ]] || INFINALITY=true
   [[ $SSH_KEY ]] || SSH_KEY=true
-  [[ $CREATE_WORKSPACE ]] || CREATE_WORKSPACE=true
-  [[ $DWM ]] || DWM=true
-  [[ $BIN ]] || BIN=true
   [[ $DOTFILES ]] || DOTFILES=true
-  [[ $VIM_CONFIG ]] || VIM_CONFIG=true
   [[ $SET_PASSWORD ]] || SET_PASSWORD=true
 fi
 
 # Setup some assumptions based on target machine
-$(lspci | grep -q VirtualBox) && SENSORS=false || VIRTUALBOX_GUEST=false
+$(lspci | grep -q VirtualBox) && SENSORS=false
 [[ $SERVER = true ]] && XWINDOWS=false UEFI=false INTEL=false
-[[ $XWINDOWS = false ]] && VIRTUALBOX_GUEST=false INFINALITY=false DWM=false
 [[ $LAPTOP = true ]] && WIFI=true
-[[ $DWM = true || $DOTFILES = true ]] && CREATE_WORKSPACE=true
 
 
 #### FUNCTIONS ####
@@ -89,7 +76,7 @@ $(lspci | grep -q VirtualBox) && SENSORS=false || VIRTUALBOX_GUEST=false
 source <(curl -Ls https://projects.archlinux.org/arch-install-scripts.git/plain/common)
 
 print_title () {
-  echo -e "\n\n\n\n\n########## $1 ##########" >> $MNT_LOG
+  echo -e "\n\n\n\n########## $1 ##########" >> $MNT_LOG
   echo -e $1
 }
 
@@ -124,24 +111,6 @@ chuser_cmd () {
   run="$1"; shift
   title="$1"; shift
   ch_cmd "$run" "$title" "$NEWUSER" "$@"
-}
-
-# Move to dotfiles
-aur_cmd () {
-  run=$1
-  url=$2
-
-  name=`basename $url .tar.gz`
-  chuser_cmd $run "$name build" \
-    "mkdir -p ~/packages" \
-    "cd ~/packages" \
-    "curl -s $url | tar -zx" \
-    "cd $name" \
-    "makepkg -cf --noprogressbar --noconfirm" \
-
-
-  chroot_cmd $run "$name install" \
-    "$AUR /tmp/$name*.pkg.tar"
 }
 
 
@@ -269,7 +238,7 @@ chroot_cmd $SENSORS 'sensors' \
   "$PACMAN lm_sensors" \
   "sensors-detect --auto"
 
-chroot_cmd $STANDARD 'standard packages' "$PACMAN base-devel git vim unison dialog"
+chroot_cmd $STANDARD 'standard packages' "$PACMAN base-devel git vim dialog"
 
 chroot_cmd $ADD_USER 'user' \
   "useradd -G wheel -s /bin/bash $NEWUSER" \
@@ -280,11 +249,9 @@ chroot_cmd $ADD_USER 'user' \
 chroot_cmd $SET_PASSWORD 'root password' "echo -e '$PASSWORD\n$PASSWORD\n' | passwd"
 chroot_cmd $SET_PASSWORD 'user password' "echo -e '$PASSWORD\n$PASSWORD\n' | passwd $NEWUSER"
 
-chroot_cmd $PACMAN_CONFIG 'pacman config' \
-  "cp /etc/makepkg.conf /etc/makepkg.conf.original"
-
 # optimised for specific architecture and build times
-chroot_cmd $AUR_FLAGS 'build flags (AUR)' \
+chroot_cmd $AUR_FLAGS 'aur build flags' \
+  "cp /etc/makepkg.conf /etc/makepkg.conf.original" \
   "sed -i 's/CFLAGS=.*/CFLAGS=\"-march=native -O2 -pipe -fstack-protector-strong --param=ssp-buffer-size=4\"/' /etc/makepkg.conf" \
   "sed -i 's/CXXFLAGS=.*/CXXFLAGS=\"\${CFLAGS}\"/' /etc/makepkg.conf" \
   "sed -i 's/.*MAKEFLAGS=.*/MAKEFLAGS=\"-j`nproc`\"/' /etc/makepkg.conf" \
@@ -297,42 +264,6 @@ chroot_cmd $NOPASS_BOOT 'no password on shutdown/reboot' \
   "sed -i s/#Color/Color/ /etc/pacman.conf" \
   "echo '$NEWUSER $MACHINE =NOPASSWD: /usr/bin/systemctl poweroff,/usr/bin/systemctl reboot' | tee -a /etc/sudoers.d/shutdown" \
   "chmod 440 /etc/sudoers.d/shutdown"
-
-chroot_cmd $XWINDOWS 'xwindows packages and applications' \
-  "$PACMAN xorg-server xorg-server-utils xorg-xinit" \
-  "$PACMAN conky elementary-icon-theme feh gnome-themes-standard lxappearance mesa-vdpau" \
-  "$PACMAN pcmanfm rxvt-unicode slock terminus-font ttf-arphic-uming xautolock xcursor-vanilla-dmz" \
-  "$PACMAN gimp inkscape xsel"
-  "cd /etc/fonts/conf.d" \
-  "ln -s ../conf.avail/10-sub-pixel-rgb.conf ." \
-  "cp /etc/conky/conky.conf /etc/conky/conky.conf.original" \
-  "echo 'out_to_console yes
-out_to_x no
-background no
-update_interval 5
-total_run_times 0
-use_spacer none
-
-TEXT
-${cpu cpu1}% ${cpu cpu2}% ${cpu cpu3}% ${cpu cpu4}% | $memperc% ($mem) | ${time %Y-%m-%d %H:%M}
-' | tee /etc/conky/conky.conf"
-
-chroot_cmd $INFINALITY 'Infinality bundle fonts' \
-  "echo -e '[infinality-bundle]\nServer = http://bohoomil.com/repo/\$arch' | tee -a /etc/pacman.conf" \
-  "echo -e '[infinality-bundle-multilib]\nServer = http://bohoomil.com/repo/multilib/\$arch' | tee -a /etc/pacman.conf" \
-  "echo -e '[infinality-bundle-fonts]\nServer = http://bohoomil.com/repo/fonts' | tee -a /etc/pacman.conf" \
-  "pacman-key -r 962DDE58" \
-  "pacman-key -f 962DDE58" \
-  "pacman-key --lsign-key 962DDE58" \
-  "pacman -Syy --noconfirm" \
-  "pacman -Rdd --noconfirm --noprogressbar ttf-dejavu" \
-  "$PACMAN ibfonts-meta-base"
-
-chroot_cmd $VIRTUALBOX_GUEST 'virtualbox guest' \
-  "$PACMAN virtualbox-guest-utils virtualbox-guest-dkms virtualbox-guest-modules" \
-  "echo -e 'vboxguest\nvboxsf\nvboxvideo\n' | tee /etc/modules-load.d/virtualbox.conf" \
-  "systemctl enable vboxservice dkms" \
-  "groupadd vboxusers && gpasswd -a $NEWUSER vboxusers" \
 
 
 #### USER SETUP ####
@@ -353,35 +284,12 @@ chroot_cmd $SSH_KEY 'ssh key ownership' \
 chuser_cmd $SSH_KEY 'trusted hosts' \
   "ssh-keyscan -H github.com | tee -a ~/.ssh/known_hosts"
 
-chuser_cmd $CREATE_WORKSPACE 'workspace' "mkdir -p $WORKSPACE"
-
-chroot_cmd $NODE '$PACMAN nodejs'
-
-aur_cmd $RBENV 'https://aur.archlinux.org/packages/rb/rbenv/rbenv.tar.gz'
-aur_cmd $RUBY_BUILD 'https://aur.archlinux.org/packages/ru/ruby-build/ruby-build.tar.gz'
-aur_cmd $CHROME 'https://aur.archlinux.org/packages/go/google-chrome/google-chrome.tar.gz'
-aur_cmd $XWINDOWS 'https://aur.archlinux.org/packages/ur/urxvt-clipboard/urxvt-clipboard.tar.gz'
-
-chuser_cmd $DWM 'dwm repo' \
-  "sudo $PASSWORD | sudo -S $PACMAN libxinerama" \
-  "cd $WORKSPACE" \
-  "git clone $PUBLIC_GIT/dwm.git" \
-  "cd dwm" \
-  "echo $PASSWORD | sudo -S make clean install"
-
-chuser_cmd $BIN 'bin repo' \
-  "cd ~" \
-  "git clone $PUBLIC_GIT/bin.git" \
-  "echo PASSWORD_DIR=$WORKSPACE/documents | tee -a ~/.pwconfig" \
-  "echo PASSWORD_FILE=.passwords.csv | tee -a ~/.pwconfig" \
-  "echo EDIT=vim | tee -a ~/.pwconfig"
-
 chuser_cmd $DOTFILES 'dotfiles repo' \
+  "mkdir -p $WORKSPACE" \
   "cd $WORKSPACE" \
   "git clone $PUBLIC_GIT/dotfiles.git" \
   "cd dotfiles" \
-  "bin/sync.sh" \
-  "bin/vim_plugins.sh"
+  "bin/sync.sh"
 
 
 #### REBOOT ####
