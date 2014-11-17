@@ -170,11 +170,10 @@ chroot_cmd $LOCALE 'time, locale, keyboard' \
   "systemctl enable ntpd" \
   "ntpd -qg" \
   "hwclock --systohc" \
-  "echo KEYMAP=\"uk\" | tee /etc/vconsole.conf" \
-  "localectl set-x11-keymap gb"
+  "echo KEYMAP=\"uk\" | tee /etc/vconsole.conf"
 
 chroot_cmd $SWAPFILE 'swap file' \
-  "fallocate -l 512M /swapfile" \
+  "fallocate -l 2G /swapfile" \
   "chmod 600 /swapfile" \
   "mkswap /swapfile" \
   "echo /swapfile none swap defaults 0 0 | tee -a /etc/fstab"
@@ -210,7 +209,7 @@ DEFAULT arch
 
 LABEL arch
   LINUX ../../vmlinuz-linux
-  APPEND root=/dev/${DRIVE}2 rw
+  APPEND root=/dev/${DRIVE}2 rw resume=/swapfile
   INITRD ${INITRD}.img
 
 LABEL archfallback
