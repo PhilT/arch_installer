@@ -58,7 +58,6 @@ if [[ $INSTALL = all || $INSTALL = dryrun ]]; then
   [[ $STANDARD ]] || STANDARD=true
   [[ $AUR_FLAGS ]] || AUR_FLAGS=true
   [[ $NOPASS_BOOT ]] || NOPASS_BOOT=true
-  [[ $CUSTOMIZATION ]] || CUSTOMIZATION=true
   [[ $INFINALITY ]] || INFINALITY=true
   [[ $SSH_KEY ]] || SSH_KEY=true
   [[ $DOTFILES ]] || DOTFILES=true
