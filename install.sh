@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 #### VERSION ####
-echo 'Arch Install Script Version 0.4.0'
+echo 'Arch Install Script Version 0.4.1'
 echo '=================================='
 echo ''
 
@@ -195,9 +195,11 @@ if [[ $UEFI = true ]]; then
 cp -r /usr/lib/syslinux/efi64/* /boot/EFI/syslinux
 efibootmgr -c -l /EFI/syslinux/syslinux.efi -L Syslinux
 "
+  LINUX='../../vmlinuz-linux'
 else
   BOOTLOADER_EXTRA=''
   SYSLINUX_CONFIG='/boot/syslinux/syslinux.cfg'
+  LINUX='../vmlinuz-linux'
 fi
 
 chroot_cmd $BOOTLOADER 'bootloader' \
@@ -208,12 +210,12 @@ TIMEOUT 50
 DEFAULT arch
 
 LABEL arch
-  LINUX ../../vmlinuz-linux
+  LINUX $LINUX
   APPEND root=/dev/${DRIVE}2 rw resume=/swapfile
   INITRD ${INITRD}.img
 
 LABEL archfallback
-  LINUX ../../vmlinuz-linux
+  LINUX $LINUX
   APPEND root=/dev/${DRIVE}2 rw
   INITRD ${INITRD}-fallback.img\" | tee $SYSLINUX_CONFIG"
 
