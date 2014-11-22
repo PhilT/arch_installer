@@ -4,25 +4,9 @@ A script to install and configure Arch Linux for server, desktop or laptop. This
 executable documentation for my setup and probably requires modifying for your needs. It also
 serves as a useful reference for how to setup a basic Arch Linux system. Fork for your pleasure.
 
-## Issues
-
-* Atom Editor install is currently broken (recommend `ATOM=false` until fixed)
-
-
-## A few defaults
-
-* WARNING - Existing partitions will be deleted
-* GPT is the partition type
-* syslinux is the bootloader
-* UEFI is enabled by default (`UEFI=false` to disable)
-* `phil` (me!) is the default user
-* `ws` is the default ~/workspace
-* Single partition and swap file (plus UEFI partition)
-* English Language, UK keyboard and UK mirrorlist selected
-
-Everything is installed via chroot so no reboot is done until the end (and it's
-an optional step should you prefer to check the installation before booting into
-Arch for the first time).
+Also, take a look at https://github.com/PhilT/dotfiles for additional scripts and
+configuration such as X Windows and a bunch of apps, Ruby, Chrome, vim plugins, and of course
+symlinking dotfiles.
 
 
 ## Motives
@@ -36,6 +20,35 @@ also want a repeatable setup.
 * I find it's a great way to learn
 
 
+## What's included
+
+This script only installs the basics. Everything is installed via chroot.
+Optionally reboot at the end.
+
+* single GPT partition and swap file (plus UEFI partition)
+  WARNING - Existing partitions will be deleted
+* adds entries into `fstab`
+* installs base system with chroot
+* British English Language, UK keyboard and UK mirrorlist
+* ntpd
+* syslinux UEFI bootloader (`UEFI=false` for BIOS)
+* Network management with netctl and systemd (WIFI and Ethernet)
+* Sets hostname
+* Enables sshd for servers
+* sensors
+* installs base-devel git vim dialog bash-completion
+* Adds a user with sudo access
+  Default: `phil` (me!), override with `NEWUSER=joe`
+* Sets some builds flags for AUR to optimise build speed
+* Adds no password needed for shutdown and reboot
+* Adds users SSH keys to home dir
+* Adds github key to `known_hosts`
+* clones my dotfiles into workspace (default: `~/ws`) and sets up symlinks
+  Overrides:
+  `WORKSPACE=~/myworkspace`
+  `PUBLIC_GIT=git@github.com:YourName`
+  `DOTFILES_SYNC_CMD=bin/sync.sh`
+
 ## Usage
 
 I need SSH keys for access to my github repos. For testing I have a Windows host
@@ -46,6 +59,10 @@ Boot an Arch Linux Live CD (https://www.archlinux.org/download/) and run the fol
     systemctl start sshd
     passwd
     ip a
+
+If setting up on a laptop you may need:
+
+    wifi-menu
 
 On the host, copy over the SSH keys to be used for the machine (I use the host ones for testing):
 

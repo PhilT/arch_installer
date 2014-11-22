@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 #### VERSION ####
-echo 'Arch Install Script Version 0.4.1'
+echo 'Arch Install Script Version 0.4.2'
 echo '=================================='
 echo ''
 
@@ -17,6 +17,7 @@ trap control_c SIGINT
 [[ $WORKSPACE ]] || WORKSPACE='~/ws' # keeping it short for window titles
 [[ $DRIVE ]] || DRIVE='sda'
 [[ $PUBLIC_GIT ]] || PUBLIC_GIT='git@github.com:PhilT'
+[[ $DOTFILES_SYNC_CMD ]] || DOTFILES_SYNC_CMD='bin/sync.sh'
 
 PACMAN='pacman -S --noconfirm --noprogressbar --needed'
 LOG='install.log'
@@ -49,7 +50,7 @@ if [[ $INSTALL = all || $INSTALL = dryrun ]]; then
   [[ $BASE ]] || BASE=true
   [[ $LOCALE ]] || LOCALE=true
   [[ $SWAPFILE ]] || SWAPFILE=true
-  [[ $INTEL ]] || INTEL=true
+  [[ $INTEL ]] || INTEL=false # causes kernel panic at the moment
   [[ $BOOTLOADER ]] || BOOTLOADER=true
   [[ $UEFI ]] || UEFI=true
   [[ $NETWORK ]] || NETWORK=true
@@ -143,7 +144,7 @@ if [[ $BASE = true && $INSTALL != dryrun ]]; then
   URL="https://www.archlinux.org/mirrorlist/?country=GB&protocol=http&ip_version=4&use_mirror_status=on"
   curl -s $URL | sed 's/^#Server/Server/' > /etc/pacman.d/mirrorlist
   pacman -Syy >> $MNT_LOG 2>&1 # Refresh package lists
-  pacstrap /mnt base bash-completion >> $MNT_LOG 2>&1
+  pacstrap /mnt base >> $MNT_LOG 2>&1
 
   print_title 'fstab'
   genfstab -U -p /mnt >> /mnt/etc/fstab
@@ -222,10 +223,13 @@ LABEL archfallback
 chroot_cmd $NETWORK 'network (inc ssh)' \
   "cp /etc/hosts /etc/hosts.original" \
   "echo $MACHINE | tee /etc/hostname" \
+  "$PACMAN openssh netctl" \
   "sed -i '/^127.0.0.1/ s/$/ $MACHINE/' /etc/hosts" \
-  "nic_name=$(ls /sys/class/net | grep -vm 1 lo)" \
-  "systemctl enable dhcpcd@\$nic_name" \
-  "$PACMAN openssh" \
+  "en=`ls /sys/class/net | grep en`" \
+  "test \$en && sudo systemctl enable netctl-auto@\${en}.service" \
+  "wl=`ls /sys/class/net | grep wl`" \
+  "test \$wl && $PACMAN wpa_supplicant wpa_actiond" \
+  "test \$wl && sudo systemctl enable netctl-auto@\${wl}.service" \
 
 chroot_cmd $SERVER 'server packages' \
   "sed -i 's/#?PermitRootLogin.*/PermitRootLogin no/' /etc/ssh/sshd_config" \
@@ -235,7 +239,7 @@ chroot_cmd $SENSORS 'sensors' \
   "$PACMAN lm_sensors" \
   "sensors-detect --auto"
 
-chroot_cmd $STANDARD 'standard packages' "$PACMAN base-devel git vim dialog"
+chroot_cmd $STANDARD 'standard packages' "$PACMAN base-devel git vim dialog bash-completion"
 
 chroot_cmd $ADD_USER 'user' \
   "useradd -G wheel -s /bin/bash $NEWUSER" \
@@ -286,7 +290,7 @@ chuser_cmd $DOTFILES 'dotfiles repo' \
   "cd $WORKSPACE" \
   "git clone $PUBLIC_GIT/dotfiles.git" \
   "cd dotfiles" \
-  "bin/sync.sh"
+  "$DOTFILES_SYNC_CMD"
 
 
 #### REBOOT ####
