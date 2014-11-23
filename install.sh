@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 #### VERSION ####
-echo 'Arch Install Script Version 0.4.4'
+echo 'Arch Install Script Version 0.4.5'
 echo '=================================='
 echo ''
 
@@ -227,10 +227,10 @@ chroot_cmd $NETWORK 'network (inc ssh)' \
   "$PACMAN openssh netctl" \
   "sed -i '/^127.0.0.1/ s/$/ $MACHINE/' /etc/hosts" \
   "en=`ls /sys/class/net | grep en`" \
-  "test \$en && sudo systemctl enable netctl-auto@\${en}.service" \
+  "[[ \$en != '' ]] && sudo systemctl enable netctl-auto@\${en}.service" \
   "wl=`ls /sys/class/net | grep wl`" \
-  "test \$wl && $PACMAN wpa_supplicant wpa_actiond" \
-  "test \$wl && sudo systemctl enable netctl-auto@\${wl}.service" \
+  "[[ \$wl != '' ]] && $PACMAN wpa_supplicant wpa_actiond" \
+  "[[ \$wl != '' ]] && sudo systemctl enable netctl-auto@\${wl}.service"
 
 chroot_cmd $SERVER 'server packages' \
   "sed -i 's/#?PermitRootLogin.*/PermitRootLogin no/' /etc/ssh/sshd_config" \
