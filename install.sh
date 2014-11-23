@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 #### VERSION ####
-echo 'Arch Install Script Version 0.4.2'
+echo 'Arch Install Script Version 0.4.3'
 echo '=================================='
 echo ''
 
@@ -27,7 +27,7 @@ MNT_LOG=$LOG
 
 if [[ ! $MACHINE ]]; then
   echo 'Enter a machine name (Used as hostname)'
-  read -s MACHINE
+  read MACHINE
 fi
 
 [[ ! $MACHINE ]] && echo 'No machine specified (MACHINE=)' && exit 1
