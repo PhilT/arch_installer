@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 #### VERSION ####
-echo 'Arch Install Script Version 0.4.3'
+echo 'Arch Install Script Version 0.4.4'
 echo '=================================='
 echo ''
 
@@ -261,7 +261,7 @@ chroot_cmd $AUR_FLAGS 'aur build flags' \
   "sed -i 's/#PKGDEST=.*/PKGDEST=\/tmp/' /etc/makepkg.conf" \
   "sed -i s/.*PKGEXT=.*/PKGEXT='.pkg.tar'/ /etc/makepkg.conf"
 
-chroot_cmd $PACMAN_CONF, 'pacman.conf' \
+chroot_cmd $PACMAN_CONF 'pacman.conf' \
   "cp /etc/pacman.conf /etc/pacman.conf.original" \
   "sed -i s/#Color/Color/ /etc/pacman.conf" \
   "echo -e '\n\nSETTINGS ADDED BY arch_installer\n' | tee -a /etc/pacman.conf" \

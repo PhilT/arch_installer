@@ -1,60 +1,41 @@
 # Install and Configure Arch Linux
 
-A script to install and configure Arch Linux for server, desktop or laptop. This is
-executable documentation for my setup and probably requires modifying for your needs. It also
-serves as a useful reference for how to setup a basic Arch Linux system. Fork for your pleasure.
-
-Also, take a look at https://github.com/PhilT/dotfiles for additional scripts and
-configuration such as X Windows and a bunch of apps, Ruby, Chrome, vim plugins, and of course
-symlinking dotfiles.
+Basic Archlinux setup script. Install X Windows, apps and configuration in separate scripts (e.g. https://github.com/PhilT/dotfiles).
 
 
-## Motives
+## Summary
 
-I realise that Archlinux is a rolling release system and that's why I want it but I
-also want a repeatable setup.
-
-* I like to have executable, repeatable documentation of everything I do
-* I'm always (re)installing new or old machines and tinkering (read: breaking)
-* I like to have a setup I can replicate across my machines
-* I find it's a great way to learn
-
-
-## What's included
-
-This script only installs the basics. Everything is installed via chroot.
-Optionally reboot at the end.
-
+* Only input is machine and a password (sets both user and root to the same)
 * single GPT partition and swap file (plus UEFI partition)
   WARNING - Existing partitions will be deleted
 * adds entries into `fstab`
 * installs base system with chroot
 * British English Language, UK keyboard and UK mirrorlist
-* ntpd
+* ntpd for time sync
 * syslinux UEFI bootloader (`UEFI=false` for BIOS)
 * Network management with netctl and systemd (WIFI and Ethernet)
 * Sets hostname
 * Enables sshd for servers
 * sensors
 * installs base-devel git vim dialog bash-completion
-* Adds a user with sudo access
-  Default: `phil` (me!), override with `NEWUSER=joe`
+* Adds for time sync a user with sudo access
+  Default: `phil` (me!), override with e.g. `NEWUSER=joe`
+* enable multilib
 * Sets some builds flags for AUR to optimise build speed
 * Adds no password needed for shutdown and reboot
 * Adds users SSH keys to home dir
-* Adds github key to `known_hosts`
+* Adds Github key to `known_hosts`
 * clones my dotfiles into workspace (default: `~/ws`) and sets up symlinks
   Overrides:
   `WORKSPACE=~/myworkspace`
   `PUBLIC_GIT=git@github.com:YourName`
   `DOTFILES_SYNC_CMD=bin/sync.sh`
 
+
 ## Usage
 
-I need SSH keys for access to my github repos. For testing I have a Windows host
-and VirtualBox VM guest.
-
-Boot an Arch Linux Live CD (https://www.archlinux.org/download/) and run the following commands:
+Boot an Arch Linux Live CD (https://www.archlinux.org/download/) and run the following commands.
+Make a note of the IP address:
 
     systemctl start sshd
     passwd
@@ -64,41 +45,32 @@ If setting up on a laptop you may need:
 
     wifi-menu
 
-On the host, copy over the SSH keys to be used for the machine (I use the host ones for testing):
+On the host, copy over the SSH keys (for Github):
 
-    scp ~/.ssh/id_rsa* root@ipaddress:~
+    scp ~/.ssh/id_rsa* root@IPaddress:~
 
-then ssh into the ip address shown and run install.sh (http://goo.gl/tKEBG9 points to my github
-repo) which will ask you for a hostname and password (used for root and your user):
+Then run the installer:
 
-    ssh root@ipaddress
+    ssh root@IPaddress
     INSTALL=all bash <(curl -Ls http://goo.gl/tKEBG9)
 
 I do it this way round as I don't always have sshd available on the host (Windows machine). Also,
 SSHing into the guest to run the install gives you scrollback on the host (and it's easier to
 copy the command to run or rerun it).
 
-Non-interactive install (handy for testing):
-
-    MACHINE=server PASSWORD=password INSTALL=dryrun bash <(curl -Ls http://goo.gl/tKEBG9)
-
 Instead of installing everything omit INSTALL and specify what you want:
 
-    MACHINE=server NOPASS_BOOT=true bash <(curl -Ls http://goo.gl/tKEBG9)
+    NOPASS_BOOT=true bash <(curl -Ls http://goo.gl/tKEBG9)
 
 Install everything except the no pass on boot:
 
-    MACHINE=desktop INSTALL=all NOPASS_BOOT=false bash <(curl -Ls http://goo.gl/tKEBG9)
-
-`MACHINE=server` sets some things like no XWINDOWS and no UEFI. Any other name just sets it as
-the host name.
+    INSTALL=all NOPASS_BOOT=false bash <(curl -Ls http://goo.gl/tKEBG9)
 
 If you mess something up and need to rerun the installation, simply unmount the drive and
 rerun the install. The existing partition will be removed. The bootloader will get upset,
 however, so once you're done testing it's best to start from scratch:
 
     umount -R /mnt
-    MACHINE=server bash <(curl -Ls http://goo.gl/tKEBG9)
 
 Take a look at the script for all the options and variables.
 
@@ -106,46 +78,29 @@ Take a look at the script for all the options and variables.
 ## Notes
 
 System-wide configuration files that will be modified by this script are first copied to a
-file with the extension .original (e.g. /etc/pacman.conf.original).
-
-The only user input is the password taken at the start to ensure the installation can complete
-unattended. Both root and user are set with the same password (you may want to change this).
+file with the extension .original (e.g. `/etc/pacman.conf.original`).
 
 All other options are specified as env variables.
 
-* `MACHINE` - specify the hostname (and sets some options). Prompts if not specified
-* `PASSWORD` - Insecure but handy for testing (prompts if not specified)
-* `INSTALL` -  `all` - everything except `REBOOT`
-               `dryrun` - does not execute commands (only logs)
-* `LAPTOP`  - Set extra options such as `$WIFI`
-* `REBOOT=` - `true` if you wish to unmount and reboot at the end. If you don't use this option, when you're ready just do `umount -R /mnt && reboot` yourself
-* `OPTION=` - `false` to turn off options
+* `MACHINE=<name>` - specify the hostname (and sets some options). Prompts if not specified
+* `PASSWORD=<password>` - Insecure but handy for testing (prompts if not specified)
+* `INSTALL=all` - everything except `REBOOT`
+* `INSTALL=dryrun` - does not execute commands (only logs)
+* `REBOOT=true` - unmount and reboot at the end. You can also do this manually with `umount -R /mnt && reboot`
 
-Before partition creation all commands and output is sent to `/tmp/install.log`. Once the
+
+## Logging
+
+Initially all commands and output is sent to `/tmp/install.log`. Once the
 partition is mounted the log file is moved to `/mnt/home/user/install.log`. On a `dryrun`
-logging is simply sent to the `~/install.log`.
+logging is simply sent to `~/install.log`.
 
-While running the install script open another terminal and ssh in then tail both files.
-Change `phil` to what you specified for `NEWUSER`:
-
-    tail -f /tmp/install.log /mnt/home/phil/install.log
-
-Or afterwards:
-
-    less /mnt/home/phil/install.log
-
-
-## Development
-
-This downloads and runs install.sh on the `dev` branch:
-
-    bash <(curl -Ls http://goo.gl/1vmj59)
 
 Login with chroot (after installation but before reboot). Useful for further testing:
 
     arch-chroot /mnt su [username]
 
-Specify username if you want to login as a user instead of root.
+Logs in with username or root.
 
 
 ## References
