@@ -58,6 +58,7 @@ if [[ $INSTALL = all || $INSTALL = dryrun ]]; then
   [[ $ADD_USER ]] || ADD_USER=true
   [[ $STANDARD ]] || STANDARD=true
   [[ $AUR_FLAGS ]] || AUR_FLAGS=true
+  [[ $PACMAN_CONF ]] || PACMAN_CONF=true
   [[ $NOPASS_BOOT ]] || NOPASS_BOOT=true
   [[ $INFINALITY ]] || INFINALITY=true
   [[ $SSH_KEY ]] || SSH_KEY=true
@@ -260,9 +261,13 @@ chroot_cmd $AUR_FLAGS 'aur build flags' \
   "sed -i 's/#PKGDEST=.*/PKGDEST=\/tmp/' /etc/makepkg.conf" \
   "sed -i s/.*PKGEXT=.*/PKGEXT='.pkg.tar'/ /etc/makepkg.conf"
 
-chroot_cmd $NOPASS_BOOT 'no password on shutdown/reboot' \
+chroot_cmd $PACMAN_CONF, 'pacman.conf' \
   "cp /etc/pacman.conf /etc/pacman.conf.original" \
   "sed -i s/#Color/Color/ /etc/pacman.conf" \
+  "echo -e '\n\nSETTINGS ADDED BY arch_installer\n' | tee -a /etc/pacman.conf" \
+  "echo -e '[multilib]\nInclude = /etc/pacman.d/mirrorlist' | tee -a /etc/pacman.conf"
+
+chroot_cmd $NOPASS_BOOT 'no password on shutdown/reboot' \
   "echo '$NEWUSER $MACHINE =NOPASSWD: /usr/bin/systemctl poweroff,/usr/bin/systemctl reboot' | tee -a /etc/sudoers.d/shutdown" \
   "chmod 440 /etc/sudoers.d/shutdown"
 
@@ -304,3 +309,4 @@ fi
 #### DONE ####
 
 print_title 'finished'
+
