@@ -227,7 +227,8 @@ chroot_cmd $NETWORK 'network (inc ssh)' \
   "$PACMAN openssh netctl" \
   "sed -i '/^127.0.0.1/ s/$/ $MACHINE/' /etc/hosts" \
   "en=`ls /sys/class/net | grep en`" \
-  "[[ \$en != '' ]] && sudo systemctl enable netctl-auto@\${en}.service" \
+  "[[ \$en != '' ]] && $PACMAN ifplugd" \
+  "[[ \$en != '' ]] && sudo systemctl enable netctl-ifplugd@\${en}.service" \
   "wl=`ls /sys/class/net | grep wl`" \
   "[[ \$wl != '' ]] && $PACMAN wpa_supplicant wpa_actiond" \
   "[[ \$wl != '' ]] && sudo systemctl enable netctl-auto@\${wl}.service"
