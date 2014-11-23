@@ -265,7 +265,8 @@ chroot_cmd $PACMAN_CONF 'pacman.conf' \
   "cp /etc/pacman.conf /etc/pacman.conf.original" \
   "sed -i s/#Color/Color/ /etc/pacman.conf" \
   "echo -e '\n\n# Enabled by arch_installer\n' | tee -a /etc/pacman.conf" \
-  "echo -e '[multilib]\nInclude = /etc/pacman.d/mirrorlist' | tee -a /etc/pacman.conf"
+  "echo -e '[multilib]\nInclude = /etc/pacman.d/mirrorlist' | tee -a /etc/pacman.conf" \
+  "pacman -Syy"
 
 chroot_cmd $NOPASS_BOOT 'no password on shutdown/reboot' \
   "echo '$NEWUSER $MACHINE =NOPASSWD: /usr/bin/systemctl poweroff,/usr/bin/systemctl reboot' | tee -a /etc/sudoers.d/shutdown" \
