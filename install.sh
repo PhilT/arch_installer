@@ -264,7 +264,7 @@ chroot_cmd $AUR_FLAGS 'aur build flags' \
 chroot_cmd $PACMAN_CONF 'pacman.conf' \
   "cp /etc/pacman.conf /etc/pacman.conf.original" \
   "sed -i s/#Color/Color/ /etc/pacman.conf" \
-  "echo -e '\n\nSETTINGS ADDED BY arch_installer\n' | tee -a /etc/pacman.conf" \
+  "echo -e '\n\n# Enabled by arch_installer\n' | tee -a /etc/pacman.conf" \
   "echo -e '[multilib]\nInclude = /etc/pacman.d/mirrorlist' | tee -a /etc/pacman.conf"
 
 chroot_cmd $NOPASS_BOOT 'no password on shutdown/reboot' \
