@@ -226,12 +226,8 @@ chroot_cmd $NETWORK 'network (inc ssh)' \
   "echo $MACHINE | tee /etc/hostname" \
   "$PACMAN openssh netctl" \
   "sed -i '/^127.0.0.1/ s/$/ $MACHINE/' /etc/hosts" \
-  "en=`ls /sys/class/net | grep en`" \
-  "[[ \$en != '' ]] && $PACMAN ifplugd" \
-  "[[ \$en != '' ]] && sudo systemctl enable netctl-ifplugd@\${en}.service" \
-  "wl=`ls /sys/class/net | grep wl`" \
-  "[[ \$wl != '' ]] && $PACMAN wpa_supplicant wpa_actiond" \
-  "[[ \$wl != '' ]] && sudo systemctl enable netctl-auto@\${wl}.service"
+  "[[ `ls /sys/class/net | grep en` != '' ]] && $PACMAN ifplugd" \
+  "[[ `ls /sys/class/net | grep wl` != '' ]] && $PACMAN wpa_supplicant wpa_actiond"
 
 chroot_cmd $SERVER 'server packages' \
   "sed -i 's/#?PermitRootLogin.*/PermitRootLogin no/' /etc/ssh/sshd_config" \
