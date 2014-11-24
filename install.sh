@@ -17,7 +17,7 @@ trap control_c SIGINT
 [[ $WORKSPACE ]] || WORKSPACE='~/ws' # keeping it short for window titles
 [[ $DRIVE ]] || DRIVE='sda'
 [[ $PUBLIC_GIT ]] || PUBLIC_GIT='git@github.com:PhilT'
-[[ $DOTFILES_SYNC_CMD ]] || DOTFILES_SYNC_CMD='bin/sync.sh'
+[[ $DOTFILES_SYNC_CMD ]] || DOTFILES_SYNC_CMD='bin/symlink.sh'
 
 PACMAN='pacman -S --noconfirm --noprogressbar --needed'
 LOG='install.log'
