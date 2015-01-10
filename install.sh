@@ -266,8 +266,8 @@ chroot_cmd $PACMAN_CONF 'pacman.conf' \
   "pacman -Syy"
 
 chroot_cmd $NOPASS_BOOT 'no password on shutdown/reboot' \
-  "echo '$NEWUSER $MACHINE =NOPASSWD: /usr/bin/systemctl poweroff,/usr/bin/systemctl reboot' | tee -a /etc/sudoers.d/shutdown" \
-  "chmod 440 /etc/sudoers.d/shutdown"
+  "echo '$NEWUSER $MACHINE =NOPASSWD: /usr/bin/systemctl poweroff,/usr/bin/systemctl reboot,/usr/bin/systemctl suspend' | tee -a /etc/sudoers.d/shutdown" \
+  "chmod 600 /etc/sudoers.d/shutdown"
 
 
 #### USER SETUP ####
