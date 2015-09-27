@@ -83,6 +83,8 @@ Take a look at the script for all the options and variables.
 
 ## Notes
 
+The accompanying file `common` is from the [arch-install-scripts](https://github.com/falconindy/arch-install-scripts) project.
+
 System-wide configuration files that will be modified by this script are first copied to a
 file with the extension .original (e.g. `/etc/pacman.conf.original`).
 

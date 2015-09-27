@@ -73,7 +73,7 @@ $(lspci | grep -q VirtualBox) && SENSORS=false INTEL=false
 
 #### FUNCTIONS ####
 
-source <(curl -Ls https://raw.githubusercontent.com/PhilT/arch_installer/master/arch-install-scripts/common)
+source <(curl -Ls https://raw.githubusercontent.com/PhilT/arch_installer/master/common)
 
 title () {
   echo -e "\n\n\n\n########## $1 ##########" >> $MNT_LOG
