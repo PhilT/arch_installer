@@ -1,7 +1,12 @@
 # Install and Configure Arch Linux
 
-Basic Archlinux setup script. Install X Windows, apps and configuration in separate scripts (e.g. https://github.com/PhilT/dotfiles).
+Basic Archlinux setup script. Install minimum system to enable
+other apps and tools to be installed after a reboot.
 
+Install X Windows, apps and configuration in separate scripts
+(e.g. https://github.com/PhilT/dotfiles).
+
+It makes some assumptions.
 
 ## Summary
 
@@ -18,10 +23,10 @@ Basic Archlinux setup script. Install X Windows, apps and configuration in separ
 * Enables sshd for servers
 * sensors
 * installs base-devel git vim dialog bash-completion
-* Adds for time sync a user with sudo access
+* For time sync, adds a user with sudo access
   Default: `phil` (me!), override with e.g. `NEWUSER=joe`
 * enable multilib
-* Sets some builds flags for AUR to optimise build speed
+* Sets some build flags for AUR to optimise build speed
 * Adds no password needed for shutdown and reboot
 * Adds users SSH keys to home dir
 * Adds Github key to `known_hosts`
@@ -37,6 +42,7 @@ Basic Archlinux setup script. Install X Windows, apps and configuration in separ
 Boot an Arch Linux Live CD (https://www.archlinux.org/download/) and run the following commands.
 Make a note of the IP address:
 
+    echo 'PermitRootLogin yes' >> /etc/ssh/sshd_config
     systemctl start sshd
     passwd
     ip a
@@ -58,7 +64,7 @@ I do it this way round as I don't always have sshd available on the host (Window
 SSHing into the guest to run the install gives you scrollback on the host (and it's easier to
 copy the command to run or rerun it).
 
-Instead of installing everything omit INSTALL and specify what you want:
+If you don't want to install everything, omit INSTALL and specify what you want:
 
     NOPASS_BOOT=true bash <(curl -Ls http://goo.gl/tKEBG9)
 
@@ -111,3 +117,4 @@ Basically all of https://wiki.archlinux.org! It's an amazing resource!
 * https://wiki.archlinux.org/index.php/Beginners'_Guide
 * https://www.archlinux.org/mirrorlist/
 * install.txt (from booted live CD)
+

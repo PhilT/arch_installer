@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 #### VERSION ####
-echo 'Arch Install Script Version 0.4.5'
+echo 'Arch Install Script Version 0.4.6'
 echo '=================================='
 echo ''
 
@@ -26,7 +26,7 @@ MNT_LOG=$LOG
 #### USER INPUT ####
 
 if [[ ! $MACHINE ]]; then
-  echo 'Enter a machine name (Used as hostname)'
+  echo 'Enter any name for the machine (Used as hostname)'
   read MACHINE
 fi
 
@@ -73,9 +73,9 @@ $(lspci | grep -q VirtualBox) && SENSORS=false INTEL=false
 
 #### FUNCTIONS ####
 
-source <(curl -Ls https://projects.archlinux.org/arch-install-scripts.git/plain/common)
+source <(curl -Ls https://raw.githubusercontent.com/PhilT/arch_installer/master/arch-install-scripts/common)
 
-print_title () {
+title () {
   echo -e "\n\n\n\n########## $1 ##########" >> $MNT_LOG
   echo -e $1
 }
@@ -92,7 +92,7 @@ ch_cmd () {
   done
 
   if [[ $run = true ]]; then
-    print_title "$title"
+    title "$title"
     echo "$cmds" | sed "s/$PASSWORD/*********/g" >> $MNT_LOG
 
     if [[ $INSTALL != dryrun ]]; then
@@ -117,10 +117,10 @@ chuser_cmd () {
 #### BASE INSTALL ####
 
 if [[ $BASE = true && $INSTALL != dryrun ]]; then
-  print_title 'keyboard'
+  title 'keyboard'
   loadkeys uk
 
-  print_title 'filesystem'
+  title 'filesystem'
   partprobe /dev/$DRIVE
   sgdisk --zap-all /dev/$DRIVE >> $MNT_LOG 2>&1
   sgdisk --new=1:0:512M --typecode=1:ef00 /dev/$DRIVE >> $MNT_LOG 2>&1
@@ -132,14 +132,14 @@ if [[ $BASE = true && $INSTALL != dryrun ]]; then
   mount /dev/${DRIVE}1 /mnt/boot
   partprobe /dev/$DRIVE
 
-  print_title 'log file'
+  title 'log file'
   TMP_LOG=$LOG
   LOG="/home/$NEWUSER/install.log"
   MNT_LOG="/mnt$LOG"
   mkdir -p $(dirname $MNT_LOG)
   mv $TMP_LOG $MNT_LOG
 
-  print_title 'arch linux base'
+  title 'arch linux base'
   mkdir -p /mnt/etc/pacman.d
   cp /etc/pacman.d/mirrorlist /mnt/etc/pacman.d/mirrorlist.original
   URL="https://www.archlinux.org/mirrorlist/?country=GB&protocol=http&ip_version=4&use_mirror_status=on"
@@ -147,7 +147,7 @@ if [[ $BASE = true && $INSTALL != dryrun ]]; then
   pacman -Syy >> $MNT_LOG 2>&1 # Refresh package lists
   pacstrap /mnt base >> $MNT_LOG 2>&1
 
-  print_title 'fstab'
+  title 'fstab'
   genfstab -U -p /mnt >> /mnt/etc/fstab
   cat /mnt/etc/fstab >> $MNT_LOG 2>&1
 fi
@@ -155,8 +155,8 @@ fi
 
 #### MOUNTS FOR CHROOT ####
 
-print_title 'chroot mounts'
-api_fs_mount /mnt || echo 'api_fs_mount failed' >> $MNT_LOG 2>&1
+title 'chroot mounts'
+chroot_setup /mnt || echo 'failed to mount filesystems (chroot_setup)' >> $MNT_LOG 2>&1
 track_mount /etc/resolv.conf /mnt/etc/resolv.conf --bind >> $MNT_LOG 2>&1
 chroot_cmd 'setup /dev/null' "mknod -m 777 /dev/null c 1 3" true >> $MNT_LOG 2>&1
 
@@ -306,5 +306,5 @@ fi
 
 #### DONE ####
 
-print_title 'finished'
+title 'finished'
 
