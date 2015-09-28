@@ -183,29 +183,29 @@ chroot_cmd $SWAPFILE 'swap file' \
 
 BOOTLOADER_PACKAGES='syslinux'
 
-if [[ $INTEL = true ]]; then
-  BOOTLOADER_PACKAGES="$BOOTLOADER_PACKAGES intel-ucode"
-  INITRD='../../intel-ucode.img'
-else
-  INITRD=''
-fi
-
 if [[ $UEFI = true ]]; then
+  PARENT='../'
   BOOTLOADER_PACKAGES="$BOOTLOADER_PACKAGES efibootmgr"
   SYSLINUX_CONFIG='/boot/EFI/syslinux/syslinux.cfg'
   BOOTLOADER_EXTRA="mkdir -p /boot/EFI/syslinux
 cp -r /usr/lib/syslinux/efi64/* /boot/EFI/syslinux
 efibootmgr -c -l /EFI/syslinux/syslinux.efi -L Syslinux
 "
-  LINUX='../../vmlinuz-linux'
-  FALLBACK='../../vmlinuz-linux-lts'
-  INITRD='$INITRD ../../initramfs-linux'
 else
-  BOOTLOADER_EXTRA=''
+  PARENT=''
+  BOOTLOADER_EXTRA="mkdir -p /boot/syslinux
+cp -r /usr/lib/syslinux/bios/*.c32 /boot/syslinux/
+extlinux --install /boot/syslinux
+dd bs=440 conv=notrunc count=1 if=/usr/lib/syslinux/bios/gptmbr.bin of=/dev/sda
+"
   SYSLINUX_CONFIG='/boot/syslinux/syslinux.cfg'
-  LINUX='../vmlinuz-linux'
-  FALLBACK='../vmlinuz-linux-lts'
-  INITRD='$INITRD ../initramfs-linux'
+fi
+
+if [[ $INTEL = true ]]; then
+  BOOTLOADER_PACKAGES="$BOOTLOADER_PACKAGES intel-ucode"
+  INTEL_IMG='$PARENT../intel-ucode.img '
+else
+  INTEL_IMG=''
 fi
 
 chroot_cmd $BOOTLOADER 'bootloader' \
@@ -216,14 +216,14 @@ TIMEOUT 50
 DEFAULT arch
 
 LABEL arch
-  LINUX $LINUX
+  LINUX $PARENT../vmlinuz-linux
   APPEND root=/dev/${DRIVE}2 rw resume=/swapfile
-  INITRD ${INITRD}.img
+  INITRD ${INTEL_IMG}$PARENT../initramfs-linux.img
 
-LABEL archfallback
-  LINUX $FALLBACK
+LABEL arch-lts
+  LINUX $PARENT../vmlinuz-linux-lts
   APPEND root=/dev/${DRIVE}2 rw
-  INITRD ${INITRD}-lts.img\" | tee $SYSLINUX_CONFIG"
+  INITRD ${INTEL_IMG}$PARENT../initramfs-linux-lts.img\" | tee $SYSLINUX_CONFIG"
 
 chroot_cmd $NETWORK 'network (inc ssh)' \
   "cp /etc/hosts /etc/hosts.original" \
@@ -311,3 +311,4 @@ fi
 #### DONE ####
 
 title 'finished'
+
