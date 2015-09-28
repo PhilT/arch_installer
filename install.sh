@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 #### VERSION ####
-echo 'Arch Install Script Version 0.4.7'
+echo 'Arch Install Script Version 0.4.8'
 echo '=================================='
 echo ''
 
@@ -185,9 +185,9 @@ BOOTLOADER_PACKAGES='syslinux'
 
 if [[ $INTEL = true ]]; then
   BOOTLOADER_PACKAGES="$BOOTLOADER_PACKAGES intel-ucode"
-  INITRD='../../intel-ucode.img ../../initramfs-linux'
+  INITRD='../../intel-ucode.img'
 else
-  INITRD='../../initramfs-linux'
+  INITRD=''
 fi
 
 if [[ $UEFI = true ]]; then
@@ -198,10 +198,14 @@ cp -r /usr/lib/syslinux/efi64/* /boot/EFI/syslinux
 efibootmgr -c -l /EFI/syslinux/syslinux.efi -L Syslinux
 "
   LINUX='../../vmlinuz-linux'
+  FALLBACK='../../vmlinuz-linux-lts'
+  INITRD='$INITRD ../../initramfs-linux'
 else
   BOOTLOADER_EXTRA=''
   SYSLINUX_CONFIG='/boot/syslinux/syslinux.cfg'
   LINUX='../vmlinuz-linux'
+  FALLBACK='../vmlinuz-linux-lts'
+  INITRD='$INITRD ../initramfs-linux'
 fi
 
 chroot_cmd $BOOTLOADER 'bootloader' \
@@ -217,9 +221,9 @@ LABEL arch
   INITRD ${INITRD}.img
 
 LABEL archfallback
-  LINUX $LINUX
+  LINUX $FALLBACK
   APPEND root=/dev/${DRIVE}2 rw
-  INITRD ${INITRD}-fallback.img\" | tee $SYSLINUX_CONFIG"
+  INITRD ${INITRD}-lts.img\" | tee $SYSLINUX_CONFIG"
 
 chroot_cmd $NETWORK 'network (inc ssh)' \
   "cp /etc/hosts /etc/hosts.original" \

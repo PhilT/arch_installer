@@ -17,7 +17,8 @@ It makes some assumptions.
 * installs base system with chroot
 * British English Language, UK keyboard and UK mirrorlist
 * ntpd for time sync
-* syslinux UEFI bootloader (`UEFI=false` for BIOS)
+* syslinux UEFI bootloader (`UEFI=false` for BIOS). Uses LTS as fallback
+  (handy for when regressions occur in the kernel)
 * Network management with netctl and systemd (WIFI and Ethernet)
 * Sets hostname
 * Enables sshd for servers
@@ -119,4 +120,3 @@ Basically all of https://wiki.archlinux.org! It's an amazing resource!
 * https://wiki.archlinux.org/index.php/Beginners'_Guide
 * https://www.archlinux.org/mirrorlist/
 * install.txt (from booted live CD)
-
