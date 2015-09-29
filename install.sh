@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 #### VERSION ####
-echo 'Arch Install Script Version 0.4.9'
+echo 'Arch Install Script Version 0.4.10'
 echo '=================================='
 echo ''
 
@@ -196,6 +196,7 @@ else
   BOOTLOADER_EXTRA="mkdir -p /boot/syslinux
 cp -r /usr/lib/syslinux/bios/*.c32 /boot/syslinux/
 extlinux --install /boot/syslinux
+sgdisk /dev/sda --attributes=1:set:2
 dd bs=440 conv=notrunc count=1 if=/usr/lib/syslinux/bios/gptmbr.bin of=/dev/sda
 "
   SYSLINUX_CONFIG='/boot/syslinux/syslinux.cfg'
@@ -311,4 +312,3 @@ fi
 #### DONE ####
 
 title 'finished'
-
