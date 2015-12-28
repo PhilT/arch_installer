@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 #### VERSION ####
-echo 'Arch Install Script Version 0.4.11'
+echo 'Arch Install Script Version 0.4.12'
 echo '=================================='
 echo ''
 
@@ -26,7 +26,8 @@ MNT_LOG=$LOG
 #### USER INPUT ####
 
 if [[ ! $MACHINE ]]; then
-  echo 'Enter any name for the machine (Used as hostname)'
+  echo 'Enter machine name (hostname)'
+  echo 'evm, evx, evs (Desktop, Laptop, Server):'
   read MACHINE
 fi
 
@@ -312,3 +313,4 @@ fi
 #### DONE ####
 
 title 'finished'
+
