@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 #### VERSION ####
-echo 'Arch Install Script Version 0.4.12'
+echo 'Arch Install Script Version 0.4.13'
 echo '=================================='
 echo ''
 
@@ -42,6 +42,10 @@ fi
 
 echo "MACHINE: $MACHINE"
 echo "INSTALL: $INSTALL"
+echo "DRIVE: $DRIVE"
+
+echo "Press ENTER to repartition $DRIVE and install Arch Linux"
+read
 
 #### OPTIONS #####
 
