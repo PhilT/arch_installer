@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 #### VERSION ####
-echo 'Arch Install Script Version 0.4.18'
+echo 'Arch Install Script Version 0.4.19'
 echo '=================================='
 echo ''
 
@@ -195,7 +195,7 @@ if [[ $UEFI = true ]]; then
   SYSLINUX_CONFIG='/boot/EFI/syslinux/syslinux.cfg'
   BOOTLOADER_EXTRA="mkdir -p /boot/EFI/syslinux
 cp -r /usr/lib/syslinux/efi64/* /boot/EFI/syslinux
-efibootmgr -c -d /dev${DRIVE} -l /EFI/syslinux/syslinux.efi -L Syslinux
+efibootmgr -c -d /dev/${DRIVE} -l /EFI/syslinux/syslinux.efi -L Syslinux
 "
 else
   PARENT=''
