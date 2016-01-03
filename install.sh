@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 #### VERSION ####
-echo 'Arch Install Script Version 0.4.16'
+echo 'Arch Install Script Version 0.4.17'
 echo '=================================='
 echo ''
 
@@ -190,8 +190,8 @@ chroot_cmd $SWAPFILE 'swap file' \
 BOOTLOADER_PACKAGES='syslinux'
 
 if [[ $UEFI = true ]]; then
+  modprobe efivarfs
   PARENT='../'
-  BOOTLOADER_PRE='modprobe efivarfs'
   BOOTLOADER_PACKAGES="$BOOTLOADER_PACKAGES efibootmgr"
   SYSLINUX_CONFIG='/boot/EFI/syslinux/syslinux.cfg'
   BOOTLOADER_EXTRA="mkdir -p /boot/EFI/syslinux
@@ -216,7 +216,6 @@ else
 fi
 
 chroot_cmd $BOOTLOADER 'bootloader' \
-  "$BOOTLOADER_PRE" \
   "$PACMAN $BOOTLOADER_PACKAGES" \
   "$BOOTLOADER_EXTRA" \
   "echo \"PROMPT 0
