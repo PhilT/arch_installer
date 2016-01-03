@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 #### VERSION ####
-echo 'Arch Install Script Version 0.4.13'
+echo 'Arch Install Script Version 0.4.14'
 echo '=================================='
 echo ''
 
@@ -131,7 +131,7 @@ if [[ $BASE = true && $INSTALL != dryrun ]]; then
   sgdisk --new=1:0:512M --typecode=1:ef00 /dev/$DRIVE >> $MNT_LOG 2>&1
   mkfs.fat -F32 /dev/${DRIVE}1 >> $MNT_LOG 2>&1
   sgdisk --new=2:0:0 /dev/$DRIVE >> $MNT_LOG 2>&1
-  sgdisk /dev/sda --attributes=1:set:2
+  sgdisk /dev/$DRIVE --attributes=1:set:2
   mkfs.ext4 -F /dev/${DRIVE}2 >> $MNT_LOG 2>&1
   mount /dev/${DRIVE}2 /mnt
   mkdir -p /mnt/boot
@@ -202,7 +202,7 @@ else
   BOOTLOADER_EXTRA="mkdir -p /boot/syslinux
 cp -r /usr/lib/syslinux/bios/*.c32 /boot/syslinux/
 extlinux --install /boot/syslinux
-dd bs=440 conv=notrunc count=1 if=/usr/lib/syslinux/bios/gptmbr.bin of=/dev/sda
+dd bs=440 conv=notrunc count=1 if=/usr/lib/syslinux/bios/gptmbr.bin of=/dev/$DRIVE
 "
   SYSLINUX_CONFIG='/boot/syslinux/syslinux.cfg'
 fi
