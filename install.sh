@@ -173,13 +173,12 @@ chroot_cmd 'setup /dev/null' "mknod -m 777 /dev/null c 1 3" true >> $MNT_LOG 2>&
 #### ROOT SETUP ####
 
 chroot_cmd $LOCALE 'time, locale, keyboard' \
-  "ln -s /usr/share/zoneinfo/GB /etc/localtime" \
+  "ln -sf /usr/share/zoneinfo/GB /etc/localtime" \
   "sed -i s/#en_GB.UTF-8/en_GB.UTF-8/ /etc/locale.gen" \
   "locale-gen" \
   "echo LANG=\"en_GB.UTF-8\" | tee /etc/locale.conf" \
   "$PACMAN ntp" \
   "systemctl enable ntpd" \
-  "ntpd -qg" \
   "hwclock --systohc" \
   "echo KEYMAP=\"uk\" | tee /etc/vconsole.conf"
 
