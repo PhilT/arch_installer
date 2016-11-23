@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 #### VERSION ####
-echo 'Arch Install Script Version 0.4.20'
+echo 'Arch Install Script Version 0.4.21'
 echo '=================================='
 echo ''
 
@@ -136,7 +136,7 @@ if [[ $BASE = true && $INSTALL != dryrun ]]; then
   sgdisk --new=2:0:0 /dev/$DRIVE >> $MNT_LOG 2>&1
   sgdisk /dev/$DRIVE --attributes=1:set:2
   mkfs.ext4 -F ${p2} >> $MNT_LOG 2>&1
-  mount ${p2}/mnt
+  mount ${p2} /mnt
   mkdir -p /mnt/boot
   mount ${p1} /mnt/boot
   partprobe /dev/$DRIVE
