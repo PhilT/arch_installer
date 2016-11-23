@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 #### VERSION ####
-echo 'Arch Install Script Version 0.4.19'
+echo 'Arch Install Script Version 0.4.20'
 echo '=================================='
 echo ''
 
@@ -127,15 +127,18 @@ if [[ $BASE = true && $INSTALL != dryrun ]]; then
 
   title 'filesystem'
   partprobe /dev/$DRIVE
+
   sgdisk --zap-all /dev/$DRIVE >> $MNT_LOG 2>&1
   sgdisk --new=1:0:512M --typecode=1:ef00 /dev/$DRIVE >> $MNT_LOG 2>&1
-  mkfs.fat -F32 /dev/${DRIVE}p1 >> $MNT_LOG 2>&1
+  p1=/dev/${DRIVE}1
+  p2=/dev/${DRIVE}2
+  mkfs.fat -F32 ${p1} >> $MNT_LOG 2>&1
   sgdisk --new=2:0:0 /dev/$DRIVE >> $MNT_LOG 2>&1
   sgdisk /dev/$DRIVE --attributes=1:set:2
-  mkfs.ext4 -F /dev/${DRIVE}p2 >> $MNT_LOG 2>&1
-  mount /dev/${DRIVE}p2 /mnt
+  mkfs.ext4 -F ${p2} >> $MNT_LOG 2>&1
+  mount ${p2}/mnt
   mkdir -p /mnt/boot
-  mount /dev/${DRIVE}p1 /mnt/boot
+  mount ${p1} /mnt/boot
   partprobe /dev/$DRIVE
 
   title 'log file'
@@ -223,12 +226,12 @@ DEFAULT arch
 
 LABEL arch
   LINUX $PARENT../vmlinuz-linux
-  APPEND root=/dev/${DRIVE}p2 rw resume=/swapfile
+  APPEND root=${p2} rw resume=/swapfile
   INITRD ${INTEL_IMG}$PARENT../initramfs-linux.img
 
 LABEL arch-lts
   LINUX $PARENT../vmlinuz-linux-lts
-  APPEND root=/dev/${DRIVE}p2 rw
+  APPEND root=${p2} rw
   INITRD ${INTEL_IMG}$PARENT../initramfs-linux-lts.img\" | tee $SYSLINUX_CONFIG"
 
 chroot_cmd $NETWORK 'network (inc ssh)' \
