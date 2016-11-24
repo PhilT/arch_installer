@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 #### VERSION ####
-echo 'Arch Install Script Version 0.4.23'
+echo 'Arch Install Script Version 0.4.24'
 echo '=================================='
 echo ''
 
@@ -237,8 +237,8 @@ chroot_cmd $NETWORK 'network (inc ssh)' \
   "echo $MACHINE | tee /etc/hostname" \
   "$PACMAN openssh netctl" \
   "sed -i '/^127.0.0.1/ s/$/ $MACHINE/' /etc/hosts" \
-  "[[ `ls /sys/class/net | grep en` != '' ]] && $PACMAN ifplugd" \
-  "[[ `ls /sys/class/net | grep wl` != '' ]] && $PACMAN wpa_supplicant wpa_actiond"
+  "[ `ls /sys/class/net | grep en` ] && $PACMAN ifplugd" \
+  "[ `ls /sys/class/net | grep wl` ] && $PACMAN wpa_supplicant wpa_actiond"
 
 chroot_cmd $SERVER 'server packages' \
   "sed -i 's/#?PermitRootLogin.*/PermitRootLogin no/' /etc/ssh/sshd_config" \
@@ -248,7 +248,7 @@ chroot_cmd $SENSORS 'sensors' \
   "$PACMAN lm_sensors" \
   "sensors-detect --auto"
 
-chroot_cmd $STANDARD 'standard packages' "$PACMAN base-devel git vim dialog bash-completion"
+chroot_cmd $STANDARD 'standard packages' "$PACMAN base-devel git-core dialog bash-completion"
 
 chroot_cmd $ADD_USER 'user' \
   "useradd -G wheel -s /bin/bash $NEWUSER" \
