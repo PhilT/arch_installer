@@ -167,7 +167,6 @@ fi
 title 'chroot mounts'
 chroot_setup /mnt || echo 'failed to mount filesystems (chroot_setup)' >> $MNT_LOG 2>&1
 chroot_add_mount /etc/resolv.conf /mnt/etc/resolv.conf --bind >> $MNT_LOG 2>&1
-chroot_cmd 'setup /dev/null' "mknod -m 777 /dev/null c 1 3" true >> $MNT_LOG 2>&1
 
 
 #### ROOT SETUP ####
@@ -319,4 +318,3 @@ fi
 #### DONE ####
 
 title 'finished'
-
