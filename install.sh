@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 #### VERSION ####
-echo 'Arch Install Script Version 0.4.24'
+echo 'Arch Install Script Version 0.4.25'
 echo '=================================='
 echo ''
 
@@ -128,13 +128,19 @@ if [[ $BASE = true && $INSTALL != dryrun ]]; then
   title 'filesystem'
   partprobe /dev/$DRIVE
 
+  # remove all partitions and create boot and main partitions
   sgdisk --zap-all /dev/$DRIVE >> $MNT_LOG 2>&1
   sgdisk --new=1:0:512M --typecode=1:ef00 /dev/$DRIVE >> $MNT_LOG 2>&1
-  p1=/dev/${DRIVE}1
-  p2=/dev/${DRIVE}2
-  mkfs.fat -F32 ${p1} >> $MNT_LOG 2>&1
   sgdisk --new=2:0:0 /dev/$DRIVE >> $MNT_LOG 2>&1
   sgdisk /dev/$DRIVE --attributes=1:set:2
+
+  # get available partition numbers
+  parts=(/dev/$DRIVE?*)
+  p1=${parts[0]}
+  p2=${parts[1]}
+
+  # format and mount partitions
+  mkfs.fat -F32 ${p1} >> $MNT_LOG 2>&1
   mkfs.ext4 -F ${p2} >> $MNT_LOG 2>&1
   mount ${p2} /mnt
   mkdir -p /mnt/boot
@@ -167,7 +173,7 @@ fi
 title 'chroot mounts'
 chroot_setup /mnt || echo 'failed to mount filesystems (chroot_setup)' >> $MNT_LOG 2>&1
 chroot_add_mount /etc/resolv.conf /mnt/etc/resolv.conf --bind >> $MNT_LOG 2>&1
-
+chroot_cmd "mknod -m 777 /dev/null c 1 3" >> $MNT_LOG 2>&1
 
 #### ROOT SETUP ####
 
