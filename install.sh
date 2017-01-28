@@ -183,6 +183,7 @@ chroot_cmd $LOCALE 'time, locale, keyboard' \
   "locale-gen" \
   "echo LANG=\"en_GB.UTF-8\" | tee /etc/locale.conf" \
   "$PACMAN ntp" \
+  "ntpdate 0.pool.ntp.org" \ # if this doesn't work /etc/ntp.conf may need a local ntp server
   "systemctl enable ntpd" \
   "hwclock --systohc" \
   "echo KEYMAP=\"uk\" | tee /etc/vconsole.conf"
